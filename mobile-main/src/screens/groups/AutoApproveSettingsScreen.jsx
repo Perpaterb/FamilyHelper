@@ -125,6 +125,21 @@ export default function AutoApproveSettingsScreen({ navigation, route }) {
   };
 
   /**
+   * Render disabled permission row with explanation
+   */
+  const renderDisabledPermission = (label, explanation) => {
+    return (
+      <View style={styles.permissionRow} key={label}>
+        <View style={styles.disabledPermissionContent}>
+          <Text style={styles.disabledPermissionLabel}>{label}</Text>
+          <Text style={styles.disabledPermissionNote}>{explanation}</Text>
+        </View>
+        <Switch value={false} disabled={true} />
+      </View>
+    );
+  };
+
+  /**
    * Render admin card with all permissions
    */
   const renderAdmin = ({ item: admin }) => {
@@ -150,29 +165,15 @@ export default function AutoApproveSettingsScreen({ navigation, route }) {
 
           <Divider style={styles.divider} />
 
-          <Text style={styles.sectionTitle}>Message Group Management</Text>
-          {renderPermissionToggle(admin, 'canHideMessages', 'Hide Messages')}
-          {renderPermissionToggle(admin, 'canChangeMessageDeletionSetting', 'Change Message Deletion Setting')}
-
-          <Divider style={styles.divider} />
-
           <Text style={styles.sectionTitle}>Member Management</Text>
           {renderPermissionToggle(admin, 'canAddMembers', 'Add Members')}
           {renderPermissionToggle(admin, 'canRemoveMembers', 'Remove Members')}
-          {renderPermissionToggle(admin, 'canChangeRoles', 'Change Roles')}
 
           <Divider style={styles.divider} />
 
-          <Text style={styles.sectionTitle}>Relationship Management</Text>
-          {renderPermissionToggle(admin, 'canAssignRelationships', 'Assign Relationships')}
-          {renderPermissionToggle(admin, 'canChangeRelationships', 'Change Relationships')}
-
-          <Divider style={styles.divider} />
-
-          <Text style={styles.sectionTitle}>Calendar Management</Text>
-          {renderPermissionToggle(admin, 'canCreateCalendarEvents', 'Create Calendar Events')}
-          {renderPermissionToggle(admin, 'canAssignChildrenToEvents', 'Assign Children to Events')}
-          {renderPermissionToggle(admin, 'canAssignCaregiversToEvents', 'Assign Caregivers to Events')}
+          <Text style={styles.sectionTitle}>Role Changes</Text>
+          {renderPermissionToggle(admin, 'canChangeRoles', 'Demote from Admin')}
+          {renderDisabledPermission('Promote to Admin', 'Always requires 100% admin approval')}
         </Card.Content>
       </Card>
     );
@@ -319,6 +320,19 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#333',
     flex: 1,
+  },
+  disabledPermissionContent: {
+    flex: 1,
+  },
+  disabledPermissionLabel: {
+    fontSize: 14,
+    color: '#999',
+  },
+  disabledPermissionNote: {
+    fontSize: 11,
+    color: '#bbb',
+    fontStyle: 'italic',
+    marginTop: 2,
   },
   emptyState: {
     flex: 1,
