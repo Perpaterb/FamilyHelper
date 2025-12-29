@@ -451,7 +451,8 @@ export default function SubscriptionScreen({ navigation }) {
                     disabled={regeneratingBill || !canRegenerateBill()}
                     style={[styles.generateBillButton, !canRegenerateBill() && styles.buttonDisabled]}
                     textColor="#6200ee"
-                    icon="email-send"
+                    icon="email-outline"
+                    labelStyle={styles.generateBillButtonLabel}
                   >
                     {invoice.lastBillingEmailSent ? 'Regenerate Bill Email' : 'Generate Bill Email'}
                   </Button>
@@ -1043,6 +1044,9 @@ const styles = StyleSheet.create({
   },
   generateBillButton: {
     borderColor: '#6200ee',
+  },
+  generateBillButtonLabel: {
+    fontSize: 16,
   },
   buttonDisabled: {
     opacity: 0.5,
