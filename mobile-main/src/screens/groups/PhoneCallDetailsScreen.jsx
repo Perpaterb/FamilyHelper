@@ -227,13 +227,15 @@ export default function PhoneCallDetailsScreen({ navigation, route }) {
 
   /**
    * Get current chunk URL (for playlist mode)
+   * Handles both call.recordingChunks and call.recording.chunks formats
    */
   const getCurrentChunkUrl = () => {
-    const chunks = call?.recordingChunks;
+    const chunks = call?.recordingChunks || call?.recording?.chunks;
     if (!chunks || chunks.length === 0) return null;
     const sortedChunks = [...chunks].sort((a, b) => a.chunkIndex - b.chunkIndex);
     const chunk = sortedChunks[currentChunkIndex];
-    return chunk ? getRecordingUrl(chunk.fileUrl) : null;
+    // API returns `url`, local data might have `fileUrl`
+    return chunk ? getRecordingUrl(chunk.url || chunk.fileUrl) : null;
   };
 
   /**
