@@ -114,8 +114,8 @@ async function createBillingCheckoutSession(user, storageInfo) {
         billingType: 'subscription_payment',
       },
     },
-    // Session expires in 7 days (to match billing window)
-    expires_at: Math.floor(Date.now() / 1000) + (7 * 24 * 60 * 60),
+    // Session expires in 24 hours (Stripe max)
+    expires_at: Math.floor(Date.now() / 1000) + (24 * 60 * 60),
   });
 
   console.log(`[Billing] Created Checkout session ${session.id} for user ${user.email}, amount: $${(totalAmountCents / 100).toFixed(2)}`);

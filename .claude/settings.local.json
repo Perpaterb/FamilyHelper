@@ -158,7 +158,10 @@
       "Bash(git stash:*)",
       "Bash(git checkout:*)",
       "Bash(git pull:*)",
-      "Bash(git branch:*)"
+      "Bash(git branch:*)",
+      "Bash(~/.local/bin/aws ses get-send-statistics:*)",
+      "Bash(~/.local/bin/aws sesv2 list-suppressed-destinations:*)",
+      "Bash(~/.local/bin/aws ses get-identity-verification-attributes:*)"
     ],
     "deny": [],
     "ask": []
