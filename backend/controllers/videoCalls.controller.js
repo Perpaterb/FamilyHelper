@@ -14,6 +14,7 @@ const { prisma } = require('../config/database');
 const { isGroupReadOnly, getReadOnlyErrorResponse } = require('../utils/permissions');
 const videoConverter = require('../services/videoConverter');
 const recorderService = require('../services/recorder.service');
+const pushNotificationService = require('../services/pushNotification.service');
 const { storageService } = require('../services/storage');
 const fileEncryption = require('../services/fileEncryption.service');
 const { v4: uuidv4 } = require('uuid');
@@ -636,6 +637,23 @@ async function initiateCall(req, res) {
         },
       },
     });
+
+    // Send push notifications to participants (fire and forget)
+    const initiatorName = call.initiator?.user?.displayName || call.initiator?.displayName || membership.displayName;
+    pushNotificationService.sendToGroupMembersWithPreferences(
+      participantIds,
+      'call_incoming',
+      `Incoming Video Call`,
+      `${initiatorName} is calling you`,
+      {
+        type: 'incoming_video_call',
+        callId: call.callId,
+        callType: 'video',
+        groupId: groupId,
+        initiatorId: membership.groupMemberId,
+        initiatorName: initiatorName,
+      }
+    ).catch(err => console.error('[Video Call] Failed to send call notifications:', err));
 
     // Start the ghost recorder if recording is enabled for this group
     const shouldRecord = settings?.recordVideoCalls !== false; // Default to true if settings don't exist
