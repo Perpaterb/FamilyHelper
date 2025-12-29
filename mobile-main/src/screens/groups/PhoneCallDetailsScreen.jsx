@@ -46,6 +46,12 @@ export default function PhoneCallDetailsScreen({ navigation, route }) {
   const [progressBarLeft, setProgressBarLeft] = useState(0);
   const [currentChunkIndex, setCurrentChunkIndex] = useState(0);
   const progressBarRef = useRef(null);
+  const soundRef = useRef(null);
+
+  // Keep soundRef in sync with sound state for cleanup
+  useEffect(() => {
+    soundRef.current = sound;
+  }, [sound]);
 
   useEffect(() => {
     loadGroupInfo();
@@ -53,10 +59,10 @@ export default function PhoneCallDetailsScreen({ navigation, route }) {
       loadCallDetails();
     }
 
-    // Cleanup sound on unmount
+    // Cleanup sound on unmount using ref to avoid stale closure
     return () => {
-      if (sound) {
-        sound.unloadAsync();
+      if (soundRef.current) {
+        soundRef.current.unloadAsync();
       }
     };
   }, [callId]);
