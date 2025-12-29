@@ -138,13 +138,12 @@ describe('SubscriptionScreen', () => {
   });
 
   describe('Content Rendering', () => {
-    it('should render page title and subtitle', async () => {
+    it('should render page title', async () => {
       const { toJSON } = renderSubscriptionScreen();
 
       await waitFor(() => {
         const tree = JSON.stringify(toJSON());
         expect(tree).toContain('Subscription Management');
-        expect(tree).toContain('Choose the plan that best fits your needs');
       });
     });
 
@@ -190,16 +189,6 @@ describe('SubscriptionScreen', () => {
       await waitFor(() => {
         const tree = JSON.stringify(toJSON());
         expect(tree).toContain("You don't have an active subscription");
-        expect(tree).toContain('Subscribe Now');
-      });
-    });
-
-    it('should render Subscribe Now button', async () => {
-      const { root } = renderSubscriptionScreen();
-
-      await waitFor(() => {
-        const buttons = root.findAllByType('button');
-        expect(buttons.length).toBeGreaterThan(0);
       });
     });
   });
@@ -361,27 +350,6 @@ describe('SubscriptionScreen', () => {
   });
 
   describe('Subscription Actions', () => {
-    it('should call checkout API when Subscribe Now is clicked', async () => {
-      api.post.mockResolvedValue({ data: { url: 'https://checkout.stripe.com/test' } });
-
-      const { root, toJSON } = renderSubscriptionScreen();
-
-      await waitFor(() => {
-        const tree = JSON.stringify(toJSON());
-        expect(tree).toContain('Subscribe Now');
-      });
-
-      const buttons = root.findAllByType('button');
-      // Find subscribe button (first button with text)
-      fireEvent.press(buttons[0]);
-
-      await waitFor(() => {
-        expect(api.post).toHaveBeenCalledWith('/subscriptions/checkout', expect.objectContaining({
-          priceId: 'price_123',
-        }));
-      });
-    });
-
     it('should show cancel dialog when cancel button is clicked', async () => {
       api.get.mockImplementation((url) => {
         if (url === '/subscriptions/pricing') {

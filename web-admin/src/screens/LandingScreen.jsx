@@ -112,7 +112,7 @@ export default function LandingScreen({ navigation }) {
         </Button>
         <Text style={styles.noCreditCard}>No credit card required</Text>
         <Text style={styles.privacyNote}>Completely ad-free and we will never sell or give any data away</Text>
-        <View style={styles.storeButtons}>
+        <div className="store-buttons-container">
           <a
             href="https://play.google.com/store"
             target="_blank"
@@ -150,7 +150,23 @@ export default function LandingScreen({ navigation }) {
               </View>
             </View>
           </div>
-        </View>
+        </div>
+        <style>{`
+          .store-buttons-container {
+            display: flex;
+            flex-direction: row;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 16px;
+            margin-top: 20px;
+          }
+          @media (max-width: 768px) {
+            .store-buttons-container {
+              flex-direction: column;
+              align-items: center;
+            }
+          }
+        `}</style>
       </Surface>
 
       {/* Features Section */}
@@ -346,11 +362,8 @@ const styles = StyleSheet.create({
     opacity: 0.7,
     marginTop: 4,
     fontSize: 12,
-  },
-  storeButtons: {
-    flexDirection: 'row',
-    marginTop: 20,
-    gap: 16,
+    textAlign: 'center',
+    maxWidth: 400,
   },
   storeButton: {
     flexDirection: 'row',
@@ -361,9 +374,11 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.3)',
+    minWidth: 200,
   },
   storeButtonTextContainer: {
     marginLeft: 10,
+    flexShrink: 0,
   },
   storeButtonSmallText: {
     color: '#fff',

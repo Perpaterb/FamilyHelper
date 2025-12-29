@@ -28,7 +28,6 @@ export default function SubscriptionScreen({ navigation }) {
   const [subscription, setSubscription] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [subscribing, setSubscribing] = useState(false);
   const [canceling, setCanceling] = useState(false);
   const [reactivating, setReactivating] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
@@ -145,35 +144,6 @@ export default function SubscriptionScreen({ navigation }) {
       setError(err.response?.data?.message || 'Failed to regenerate bill. Please try again.');
     } finally {
       setRegeneratingBill(false);
-    }
-  }
-
-  /**
-   * Handle subscription checkout
-   * @param {string} priceId - Stripe price ID
-   */
-  async function handleSubscribe(priceId) {
-    try {
-      setSubscribing(true);
-      setError(null);
-
-      // Create checkout session
-      const response = await api.post('/subscriptions/checkout', {
-        priceId: priceId,
-        successUrl: `${window.location.origin}/subscription?success=true`,
-        cancelUrl: `${window.location.origin}/subscription?canceled=true`,
-      });
-
-      // Redirect to Stripe checkout
-      if (response.data.url) {
-        window.location.href = response.data.url;
-      } else {
-        throw new Error('No checkout URL received');
-      }
-    } catch (err) {
-      console.error('Subscription checkout failed:', err);
-      setError(err.response?.data?.message || 'Failed to start checkout. Please try again.');
-      setSubscribing(false);
     }
   }
 
@@ -309,9 +279,6 @@ export default function SubscriptionScreen({ navigation }) {
     <ScrollView style={styles.container}>
       <View style={styles.content}>
         <Title style={styles.pageTitle}>Subscription Management</Title>
-        <Paragraph style={styles.pageSubtitle}>
-          Choose the plan that best fits your needs. All plans include access to the admin features.
-        </Paragraph>
 
         {/* Error Alert */}
         {error && (
@@ -373,23 +340,13 @@ export default function SubscriptionScreen({ navigation }) {
                   </View>
                 </View>
               </Card.Content>
-              <Card.Actions style={styles.cardActions}>
-                {subscription?.isSubscribed ? (
+              {subscription?.isSubscribed && (
+                <Card.Actions style={styles.cardActions}>
                   <Chip style={styles.activeChip} textStyle={styles.activeChipText}>
                     Active Subscription
                   </Chip>
-                ) : (
-                  <Button
-                    mode="contained"
-                    onPress={() => handleSubscribe(pricing.adminSubscription.priceId)}
-                    loading={subscribing}
-                    disabled={subscribing}
-                    style={styles.subscribeButton}
-                  >
-                    Subscribe Now
-                  </Button>
-                )}
-              </Card.Actions>
+                </Card.Actions>
+              )}
             </Card>
 
             {/* Additional Storage Card */}
@@ -479,7 +436,7 @@ export default function SubscriptionScreen({ navigation }) {
                 <Surface style={styles.trialBillingNote}>
                   <MaterialCommunityIcons name="information" size={18} color="#1565c0" />
                   <Text style={styles.trialBillingNoteText}>
-                    Your first billing date is at the end of your 20-day trial. After subscribing, your next bill will be 31 days later (you could get up to 51 days before your first payment!).
+                    Your first billing date is at the end of your 20-day trial. If you subscribe during your trial the first subscription period will be one month + the days left on your trial.
                   </Text>
                 </Surface>
               )}
@@ -769,10 +726,6 @@ const styles = StyleSheet.create({
   },
   pageTitle: {
     fontSize: 28,
-    marginBottom: 8,
-  },
-  pageSubtitle: {
-    color: '#666',
     marginBottom: 24,
   },
   // Alert styles
@@ -877,9 +830,6 @@ const styles = StyleSheet.create({
   cardActions: {
     padding: 16,
     justifyContent: 'center',
-  },
-  subscribeButton: {
-    width: '100%',
   },
   activeChip: {
     backgroundColor: '#e8f5e9',
