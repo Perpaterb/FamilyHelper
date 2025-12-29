@@ -648,10 +648,14 @@ async function getGroupFiles(req, res) {
     availableUploaders.sort((a, b) => a.email.localeCompare(b.email));
 
     // Get phone call recordings from this group
+    // Include both legacy single-file recordings (recordingUrl) and new chunked recordings
     const phoneCallRecordings = await prisma.phoneCall.findMany({
       where: {
         groupId: groupId,
-        recordingUrl: { not: null },
+        OR: [
+          { recordingUrl: { not: null } }, // Legacy single-file recordings
+          { recordingChunks: { some: { status: 'ready' } } }, // New chunked recordings
+        ],
       },
       include: {
         initiator: {
@@ -686,6 +690,19 @@ async function getGroupFiles(req, res) {
                 profilePhotoFileId: true,
               },
             },
+          },
+        },
+        // Include recording chunks to calculate total size and get URL
+        recordingChunks: {
+          where: { status: 'ready' },
+          orderBy: { chunkIndex: 'asc' },
+          select: {
+            chunkId: true,
+            chunkIndex: true,
+            fileUrl: true,
+            durationMs: true,
+            sizeBytes: true,
+            createdAt: true,
           },
         },
       },
@@ -750,9 +767,9 @@ async function getGroupFiles(req, res) {
       },
     });
 
-    // Format phone call recordings as files
+    // Format phone call recordings as files (flatMap to handle chunks as separate entries)
     const baseUrl = process.env.API_BASE_URL || 'http://localhost:3000';
-    const phoneCallFiles = phoneCallRecordings.map(call => {
+    const phoneCallFiles = phoneCallRecordings.flatMap(call => {
       const initiator = call.initiator;
       const uploaderEmail = initiator?.user?.email || null;
       const uploader = {
@@ -786,28 +803,68 @@ async function getGroupFiles(req, res) {
         };
       }
 
-      // Format datetime for filename
+      // Format datetime from call start
       const startedDate = new Date(call.startedAt);
       const dateStr = startedDate.toISOString().replace('T', ' ').substring(0, 19);
 
-      return {
-        mediaId: `phonecall-${call.callId}`,
-        fileName: `Phone Call Recording ${dateStr}`,
-        fileSizeBytes: Number(call.recordingSizeBytes || 0),
-        mimeType: 'audio/mpeg',
-        fileType: 'phonecall',
-        uploadedAt: call.endedAt || call.startedAt,
-        url: call.recordingUrl ? `${baseUrl}${call.recordingUrl}` : null,
-        thumbnailUrl: null,
-        pendingDeletion: false, // TODO: Add approval workflow for call recordings
-        isLog: false,
-        uploader: uploader,
-        isDeleted: call.recordingIsHidden,
-        deletedAt: call.recordingHiddenAt,
-        deletedBy: deletedBy,
-        callId: call.callId, // Include call ID for reference
-        callDurationMs: call.durationMs,
-      };
+      // For chunked recordings, create separate entries for each chunk
+      const hasChunks = call.recordingChunks && call.recordingChunks.length > 0;
+
+      if (hasChunks) {
+        const totalChunks = call.recordingChunks.length;
+        return call.recordingChunks.map((chunk, index) => {
+          const partNum = index + 1;
+          const fileName = totalChunks > 1
+            ? `Phone Call Recording ${dateStr} Part ${partNum} of ${totalChunks}`
+            : `Phone Call Recording ${dateStr}`;
+
+          return {
+            mediaId: `phonecall-${call.callId}-chunk-${chunk.chunkIndex}`,
+            fileName: fileName,
+            fileSizeBytes: Number(chunk.sizeBytes || 0),
+            mimeType: 'audio/mpeg',
+            fileType: 'phonecall',
+            uploadedAt: chunk.createdAt || call.endedAt || call.startedAt,
+            url: chunk.fileUrl ? `${baseUrl}${chunk.fileUrl}` : null,
+            thumbnailUrl: null,
+            pendingDeletion: false,
+            isLog: false,
+            uploader: uploader,
+            isDeleted: call.recordingIsHidden,
+            deletedAt: call.recordingHiddenAt,
+            deletedBy: deletedBy,
+            callId: call.callId,
+            callDurationMs: call.durationMs,
+            chunkNumber: chunk.chunkIndex,
+            totalChunks: totalChunks,
+          };
+        });
+      } else if (call.recordingUrl) {
+        // Legacy single-file recording
+        return [{
+          mediaId: `phonecall-${call.callId}`,
+          fileName: `Phone Call Recording ${dateStr}`,
+          fileSizeBytes: Number(call.recordingSizeBytes || 0),
+          mimeType: 'audio/mpeg',
+          fileType: 'phonecall',
+          uploadedAt: call.endedAt || call.startedAt,
+          url: `${baseUrl}${call.recordingUrl}`,
+          thumbnailUrl: null,
+          pendingDeletion: false,
+          isLog: false,
+          uploader: uploader,
+          isDeleted: call.recordingIsHidden,
+          deletedAt: call.recordingHiddenAt,
+          deletedBy: deletedBy,
+          callId: call.callId,
+          callDurationMs: call.durationMs,
+          chunkNumber: null,
+          totalChunks: 1,
+        }];
+      }
+
+      // No recording URL or chunks - skip
+      return [];
     });
 
     // Format video call recordings as files (flatMap to handle chunks as separate entries)
