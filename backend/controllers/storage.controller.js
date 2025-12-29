@@ -786,15 +786,13 @@ async function getGroupFiles(req, res) {
         };
       }
 
-      // Format duration for filename
-      const durationSecs = call.recordingDurationMs ? Math.floor(call.recordingDurationMs / 1000) : 0;
-      const durationMins = Math.floor(durationSecs / 60);
-      const durationSecsRemain = durationSecs % 60;
-      const durationStr = `${durationMins}m${durationSecsRemain}s`;
+      // Format datetime for filename
+      const startedDate = new Date(call.startedAt);
+      const dateStr = startedDate.toISOString().replace('T', ' ').substring(0, 19);
 
       return {
         mediaId: `phonecall-${call.callId}`,
-        fileName: `Phone Call Recording (${durationStr})`,
+        fileName: `Phone Call Recording ${dateStr}`,
         fileSizeBytes: Number(call.recordingSizeBytes || 0),
         mimeType: 'audio/mpeg',
         fileType: 'phonecall',
@@ -812,8 +810,8 @@ async function getGroupFiles(req, res) {
       };
     });
 
-    // Format video call recordings as files
-    const videoCallFiles = videoCallRecordings.map(call => {
+    // Format video call recordings as files (flatMap to handle chunks as separate entries)
+    const videoCallFiles = videoCallRecordings.flatMap(call => {
       const initiator = call.initiator;
       const uploaderEmail = initiator?.user?.email || null;
       const uploader = {
@@ -847,54 +845,68 @@ async function getGroupFiles(req, res) {
         };
       }
 
-      // For chunked recordings, calculate total size and duration from chunks
+      // Format datetime from call start
+      const startedDate = new Date(call.startedAt);
+      const dateStr = startedDate.toISOString().replace('T', ' ').substring(0, 19);
+
+      // For chunked recordings, create separate entries for each chunk
       const hasChunks = call.recordingChunks && call.recordingChunks.length > 0;
-      let totalSizeBytes = 0;
-      let totalDurationMs = 0;
-      let recordingUrl = null;
-      let mimeType = 'video/mp4';
 
       if (hasChunks) {
-        // New chunked recording system
-        totalSizeBytes = call.recordingChunks.reduce((sum, chunk) => sum + Number(chunk.sizeBytes || 0), 0);
-        totalDurationMs = call.recordingChunks.reduce((sum, chunk) => sum + (chunk.durationMs || 0), 0);
-        // Use first chunk URL for preview/playback (chunks are ordered)
-        recordingUrl = call.recordingChunks[0]?.fileUrl || null;
-        // WebM is the native format from MediaRecorder
-        mimeType = 'video/webm';
+        const totalChunks = call.recordingChunks.length;
+        return call.recordingChunks.map((chunk, index) => {
+          const partNum = index + 1;
+          const fileName = totalChunks > 1
+            ? `Video Call Recording ${dateStr} Part ${partNum} of ${totalChunks}`
+            : `Video Call Recording ${dateStr}`;
+
+          return {
+            mediaId: `videocall-${call.callId}-chunk-${chunk.chunkNumber}`,
+            fileName: fileName,
+            fileSizeBytes: Number(chunk.sizeBytes || 0),
+            mimeType: 'video/webm',
+            fileType: 'videocall',
+            uploadedAt: chunk.createdAt || call.endedAt || call.startedAt,
+            url: chunk.fileUrl ? `${baseUrl}${chunk.fileUrl}` : null,
+            thumbnailUrl: null,
+            pendingDeletion: false,
+            isLog: false,
+            uploader: uploader,
+            isDeleted: call.recordingIsHidden,
+            deletedAt: call.recordingHiddenAt,
+            deletedBy: deletedBy,
+            callId: call.callId,
+            callDurationMs: call.durationMs,
+            chunkNumber: chunk.chunkNumber,
+            totalChunks: totalChunks,
+          };
+        });
       } else if (call.recordingUrl) {
         // Legacy single-file recording
-        totalSizeBytes = Number(call.recordingSizeBytes || 0);
-        totalDurationMs = call.recordingDurationMs || 0;
-        recordingUrl = call.recordingUrl;
+        return [{
+          mediaId: `videocall-${call.callId}`,
+          fileName: `Video Call Recording ${dateStr}`,
+          fileSizeBytes: Number(call.recordingSizeBytes || 0),
+          mimeType: 'video/mp4',
+          fileType: 'videocall',
+          uploadedAt: call.endedAt || call.startedAt,
+          url: `${baseUrl}${call.recordingUrl}`,
+          thumbnailUrl: null,
+          pendingDeletion: false,
+          isLog: false,
+          uploader: uploader,
+          isDeleted: call.recordingIsHidden,
+          deletedAt: call.recordingHiddenAt,
+          deletedBy: deletedBy,
+          callId: call.callId,
+          callDurationMs: call.durationMs,
+          chunkNumber: null,
+          totalChunks: 1,
+        }];
       }
 
-      // Format duration for filename
-      const durationSecs = totalDurationMs ? Math.floor(totalDurationMs / 1000) : 0;
-      const durationMins = Math.floor(durationSecs / 60);
-      const durationSecsRemain = durationSecs % 60;
-      const durationStr = `${durationMins}m${durationSecsRemain}s`;
-
-      return {
-        mediaId: `videocall-${call.callId}`,
-        fileName: `Video Call Recording (${durationStr})`,
-        fileSizeBytes: totalSizeBytes,
-        mimeType: mimeType,
-        fileType: 'videocall',
-        uploadedAt: call.endedAt || call.startedAt,
-        url: recordingUrl ? `${baseUrl}${recordingUrl}` : null,
-        thumbnailUrl: null,
-        pendingDeletion: false, // TODO: Add approval workflow for call recordings
-        isLog: false,
-        uploader: uploader,
-        isDeleted: call.recordingIsHidden,
-        deletedAt: call.recordingHiddenAt,
-        deletedBy: deletedBy,
-        callId: call.callId, // Include call ID for reference
-        callDurationMs: call.durationMs,
-        hasChunks: hasChunks, // Indicate if this is a chunked recording
-        chunkCount: hasChunks ? call.recordingChunks.length : 0,
-      };
+      // No recording URL - skip
+      return [];
     });
 
     // Merge all files together
@@ -1225,6 +1237,7 @@ async function requestCallRecordingDeletion(req, res, userId, mediaId) {
         select: {
           callId: true,
           groupId: true,
+          startedAt: true,
           recordingUrl: true,
           recordingSizeBytes: true,
           recordingDurationMs: true,
@@ -1236,6 +1249,7 @@ async function requestCallRecordingDeletion(req, res, userId, mediaId) {
         select: {
           callId: true,
           groupId: true,
+          startedAt: true,
           recordingUrl: true,
           recordingSizeBytes: true,
           recordingDurationMs: true,
@@ -1294,12 +1308,10 @@ async function requestCallRecordingDeletion(req, res, userId, mediaId) {
     },
   });
 
-  // Format duration for filename
-  const durationSecs = call.recordingDurationMs ? Math.floor(call.recordingDurationMs / 1000) : 0;
-  const durationMins = Math.floor(durationSecs / 60);
-  const durationSecsRemain = durationSecs % 60;
-  const durationStr = `${durationMins}m${durationSecsRemain}s`;
-  const fileName = isPhoneCall ? `Phone Call Recording (${durationStr})` : `Video Call Recording (${durationStr})`;
+  // Format datetime for filename
+  const startedDate = new Date(call.startedAt);
+  const dateStr = startedDate.toISOString().replace('T', ' ').substring(0, 19);
+  const fileName = isPhoneCall ? `Phone Call Recording ${dateStr}` : `Video Call Recording ${dateStr}`;
   const fileSizeBytes = Number(call.recordingSizeBytes || 0);
 
   // For single admin groups, delete immediately without approval workflow
