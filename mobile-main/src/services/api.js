@@ -14,6 +14,7 @@
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 import authEvents from './authEvents';
+import { hasTokenRefresher, refreshToken as refreshFromProvider } from './tokenProvider';
 
 // API Base URL - uses environment variable with fallback to localhost
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
@@ -111,7 +112,36 @@ api.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        // Attempt to refresh token using Kinde's token endpoint
+        // Check if we have a token provider (web-admin with Kinde SDK)
+        if (hasTokenRefresher()) {
+          const newToken = await refreshFromProvider();
+
+          if (newToken) {
+            // Store the new token
+            await SecureStore.setItemAsync('accessToken', newToken);
+            api.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
+
+            processQueue(null, newToken);
+            isRefreshing = false;
+
+            originalRequest.headers.Authorization = `Bearer ${newToken}`;
+            return api(originalRequest);
+          }
+
+          // Token provider failed - trigger logout
+          processQueue(new Error('Token refresh failed'));
+          isRefreshing = false;
+
+          await SecureStore.deleteItemAsync('accessToken');
+          authEvents.emitLogout('token_provider_refresh_failed');
+
+          const authError = new Error('Session expired');
+          authError.isAuthError = true;
+          authError.silent = true;
+          return Promise.reject(authError);
+        }
+
+        // Mobile flow: Attempt to refresh token using Kinde's token endpoint
         const refreshToken = await SecureStore.getItemAsync('refreshToken');
 
         if (!refreshToken) {

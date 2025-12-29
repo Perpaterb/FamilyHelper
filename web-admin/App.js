@@ -16,6 +16,7 @@ import { Provider as PaperProvider, MD3LightTheme } from 'react-native-paper';
 import { KindeProvider, useKindeAuth } from '@kinde-oss/kinde-auth-react';
 import * as SecureStore from 'expo-secure-store';
 import config from './src/config/env';
+import { setTokenRefresher, clearTokenRefresher } from '../mobile-main/src/services/tokenProvider';
 
 // Layout components
 import AppLayout from './src/components/AppLayout';
@@ -288,9 +289,10 @@ function AppNavigator() {
         // Store Kinde token directly - API validates via JWKS
         await SecureStore.setItemAsync('accessToken', kindeToken);
 
-        // Note: Kinde React SDK manages refresh internally via silent auth
-        // We don't need to store refresh token separately for web-admin
-        // The SDK will provide a fresh token when we call getToken()
+        // Register token refresher for api.js to use on 401 errors
+        // Kinde React SDK handles refresh internally via silent auth
+        setTokenRefresher(() => getToken());
+        console.log('[App] Token refresher registered for API calls');
 
         setTokenExchanged(true);
         console.log('[App] Kinde token stored for API calls');
@@ -302,6 +304,13 @@ function AppNavigator() {
 
     storeKindeTokens();
   }, [isAuthenticated, isLoading, getToken, user, tokenExchanged]);
+
+  // Clear token refresher when user logs out
+  useEffect(() => {
+    if (!isAuthenticated && !isLoading) {
+      clearTokenRefresher();
+    }
+  }, [isAuthenticated, isLoading]);
 
   // Show loading until Kinde has finished checking auth state
   // This prevents the brief flash of unauthenticated state that causes redirect loops
