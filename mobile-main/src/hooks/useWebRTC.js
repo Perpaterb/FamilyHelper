@@ -70,6 +70,7 @@ export function useWebRTC({ groupId, callId, isActive, isInitiator, audioOnly = 
   const [error, setError] = useState(null);
   const [myPeerId, setMyPeerId] = useState(null);
   const [connectionStates, setConnectionStates] = useState({}); // { peerId: state }
+  const [cameraFacing, setCameraFacing] = useState('front'); // 'front' or 'back'
   const [recordingStatus, setRecordingStatus] = useState([]); // Recording status messages from server
 
   // Recording chunk tracking - parsed from status messages
@@ -360,7 +361,11 @@ export function useWebRTC({ groupId, callId, isActive, isInitiator, audioOnly = 
     try {
       const constraints = {
         video: !audioOnly, // No video for phone calls
-        audio: true,
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        },
       };
       const stream = await mediaDevicesAPI.getUserMedia(constraints);
       localStreamRef.current = stream;
@@ -373,7 +378,11 @@ export function useWebRTC({ groupId, callId, isActive, isInitiator, audioOnly = 
         try {
           const audioStream = await mediaDevicesAPI.getUserMedia({
             video: false,
-            audio: true,
+            audio: {
+              echoCancellation: true,
+              noiseSuppression: true,
+              autoGainControl: true,
+            },
           });
           localStreamRef.current = audioStream;
           setLocalStream(audioStream);
@@ -491,6 +500,50 @@ export function useWebRTC({ groupId, callId, isActive, isInitiator, audioOnly = 
     }
   }, [localStream]);
 
+  /**
+   * Switch between front and back camera
+   */
+  const switchCamera = useCallback(async () => {
+    if (!localStream || audioOnly || !isWebRTCSupported) {
+      return;
+    }
+
+    try {
+      const newFacing = cameraFacing === 'front' ? 'back' : 'front';
+      const facingMode = newFacing === 'front' ? 'user' : 'environment';
+
+      // Get new video stream with opposite camera
+      const newStream = await mediaDevicesAPI.getUserMedia({
+        video: { facingMode },
+        audio: false, // Keep existing audio track
+      });
+
+      const newVideoTrack = newStream.getVideoTracks()[0];
+      const oldVideoTrack = localStream.getVideoTracks()[0];
+
+      if (oldVideoTrack && newVideoTrack) {
+        // Replace track in all peer connections
+        Object.values(peerConnectionsRef.current).forEach(pc => {
+          const sender = pc.getSenders().find(s => s.track?.kind === 'video');
+          if (sender) {
+            sender.replaceTrack(newVideoTrack);
+          }
+        });
+
+        // Stop old track and replace in local stream
+        oldVideoTrack.stop();
+        localStream.removeTrack(oldVideoTrack);
+        localStream.addTrack(newVideoTrack);
+
+        // Update state
+        setCameraFacing(newFacing);
+        setLocalStream(localStream); // Trigger re-render
+      }
+    } catch (err) {
+      console.error('[WebRTC] Camera switch error:', err.message);
+    }
+  }, [localStream, cameraFacing, audioOnly, isWebRTCSupported]);
+
   // Start connection when call becomes active
   useEffect(() => {
     if (isActive && isWebRTCSupported) {
@@ -533,6 +586,7 @@ export function useWebRTC({ groupId, callId, isActive, isInitiator, audioOnly = 
     stopConnection,
     toggleVideo,
     toggleAudio,
+    switchCamera,
   };
 }
 

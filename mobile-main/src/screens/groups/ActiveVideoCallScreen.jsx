@@ -88,6 +88,7 @@ export default function ActiveVideoCallScreen({ navigation, route }) {
     toggleVideo,
     toggleAudio,
     stopConnection,
+    switchCamera,
   } = useWebRTC({
     groupId,
     callId,
@@ -317,6 +318,10 @@ export default function ActiveVideoCallScreen({ navigation, route }) {
   };
 
   const toggleCameraFacing = () => {
+    // Use the WebRTC hook's switchCamera for proper track replacement
+    if (switchCamera) {
+      switchCamera();
+    }
     setCameraFacing(prev => prev === 'front' ? 'back' : 'front');
   };
 

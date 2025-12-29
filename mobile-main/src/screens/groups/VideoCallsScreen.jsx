@@ -280,7 +280,7 @@ export default function VideoCallsScreen({ navigation, route }) {
       <View style={styles.container}>
         <CustomNavigationHeader
           title="Video Calls"
-          onBack={() => navigation.goBack()}
+          onBack={() => navigation.navigate('GroupDashboard', { groupId })}
         />
         <View style={styles.loadingContainer}>
           <Text>Loading video calls...</Text>
@@ -293,7 +293,7 @@ export default function VideoCallsScreen({ navigation, route }) {
     <View style={styles.container}>
       <CustomNavigationHeader
         title="Video Calls"
-        onBack={() => navigation.goBack()}
+        onBack={() => navigation.navigate('GroupDashboard', { groupId })}
       />
 
       {error && (

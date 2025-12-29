@@ -290,7 +290,7 @@ export default function PhoneCallsScreen({ navigation, route }) {
       <View style={styles.container}>
         <CustomNavigationHeader
           title="Phone Calls"
-          onBack={() => navigation.goBack()}
+          onBack={() => navigation.navigate('GroupDashboard', { groupId })}
         />
         <View style={styles.loadingContainer}>
           <Text>Loading phone calls...</Text>
@@ -303,7 +303,7 @@ export default function PhoneCallsScreen({ navigation, route }) {
     <View style={styles.container}>
       <CustomNavigationHeader
         title="Phone Calls"
-        onBack={() => navigation.goBack()}
+        onBack={() => navigation.navigate('GroupDashboard', { groupId })}
       />
 
       {error && (
