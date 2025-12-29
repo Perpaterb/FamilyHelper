@@ -783,9 +783,9 @@ async function voteOnApproval(req, res) {
         data: {
           groupId: groupId,
           action: newStatus === 'approved' ? 'approval_completed' : 'approval_rejected',
-          performedBy: 'system',
+          performedBy: null,
           performedByName: 'System',
-          performedByEmail: 'system@app',
+          performedByEmail: null,
           actionLocation: 'approvals',
           messageContent: `Approval ${newStatus}: ${actionDescription}. Final vote: ${approveVotes} approve, ${rejectVotes} reject (${totalAdmins} total admins)`,
           logData: {
