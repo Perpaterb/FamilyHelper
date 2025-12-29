@@ -299,16 +299,7 @@ export default function PhoneCallDetailsScreen({ navigation, route }) {
     // Use chunk URL if chunks exist, otherwise single recording URL
     const chunks = getSortedChunks();
     const recordingUrl = chunks.length > 0 ? getCurrentChunkUrl() : getRecordingUrl();
-
-    console.log('[PhoneCallDetails] togglePlayback called');
-    console.log('[PhoneCallDetails] chunks:', chunks.length);
-    console.log('[PhoneCallDetails] recordingUrl:', recordingUrl);
-    console.log('[PhoneCallDetails] call.recording:', JSON.stringify(call?.recording, null, 2));
-
-    if (!recordingUrl) {
-      console.log('[PhoneCallDetails] No recording URL found, returning early');
-      return;
-    }
+    if (!recordingUrl) return;
 
     try {
       if (sound) {
