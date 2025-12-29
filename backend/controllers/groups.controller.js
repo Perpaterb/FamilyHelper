@@ -2451,6 +2451,15 @@ async function changeMemberRole(req, res) {
           },
         });
 
+        // Send push notification to other admins (fire and forget)
+        pushNotificationService.sendApprovalNotification(
+          groupId,
+          currentUserMembership.groupMemberId,
+          'change_role_to_admin',
+          `${currentUserMembership.displayName} wants to promote ${targetMembership.user?.displayName || targetMembership.displayName} to admin`,
+          approval.approvalId
+        ).catch(err => console.error('[Groups] Failed to send approval notification:', err));
+
         return res.status(200).json({
           success: true,
           requiresApproval: true,
@@ -2624,6 +2633,15 @@ async function changeMemberRole(req, res) {
             messageContent: `Requested approval to change role of ${targetMembership.user?.displayName || targetMembership.email} from ${oldRole} to ${role}`,
           },
         });
+
+        // Send push notification to other admins (fire and forget)
+        pushNotificationService.sendApprovalNotification(
+          groupId,
+          currentUserMembership.groupMemberId,
+          'change_role_from_admin',
+          `${currentUserMembership.displayName} wants to demote ${targetMembership.user?.displayName || targetMembership.displayName} from admin to ${role}`,
+          approval.approvalId
+        ).catch(err => console.error('[Groups] Failed to send approval notification:', err));
 
         return res.status(200).json({
           success: true,
@@ -2988,6 +3006,15 @@ async function removeMember(req, res) {
             messageContent: `Requested approval to remove ${targetDisplayName} (admin) from group`,
           },
         });
+
+        // Send push notification to other admins (fire and forget)
+        pushNotificationService.sendApprovalNotification(
+          groupId,
+          currentUserMembership.groupMemberId,
+          'remove_member',
+          `${currentUserMembership.displayName} wants to remove ${targetDisplayName} from the group`,
+          approval.approvalId
+        ).catch(err => console.error('[Groups] Failed to send approval notification:', err));
 
         return res.status(200).json({
           success: true,

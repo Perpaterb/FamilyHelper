@@ -8,6 +8,7 @@
  */
 
 const { prisma } = require('../config/database');
+const pushNotificationService = require('../services/pushNotification.service');
 
 /**
  * Get storage usage overview
@@ -1178,6 +1179,15 @@ async function requestFileDeletion(req, res) {
       });
     }
 
+    // Send push notification to other admins (fire and forget)
+    pushNotificationService.sendApprovalNotification(
+      groupId,
+      membership.groupMemberId,
+      'delete_file',
+      `${membership.displayName} wants to delete file: "${fileName}"`,
+      approval.approvalId
+    ).catch(err => console.error('[Storage] Failed to send approval notification:', err));
+
     res.status(200).json({
       success: true,
       message: 'Deletion request submitted for admin approval',
@@ -1403,6 +1413,15 @@ async function requestCallRecordingDeletion(req, res, userId, mediaId) {
       },
     },
   });
+
+  // Send push notification to other admins (fire and forget)
+  pushNotificationService.sendApprovalNotification(
+    groupId,
+    membership.groupMemberId,
+    'delete_call_recording',
+    `${membership.displayName} wants to delete ${isPhoneCall ? 'phone' : 'video'} call recording`,
+    approval.approvalId
+  ).catch(err => console.error('[Storage] Failed to send approval notification:', err));
 
   return res.status(200).json({
     success: true,

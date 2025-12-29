@@ -11,6 +11,7 @@ const fs = require('fs');
 const encryptionService = require('../services/encryption.service');
 const pdfService = require('../services/pdf.service');
 const { prisma } = require('../config/database');
+const pushNotificationService = require('../services/pushNotification.service');
 
 /**
  * Get audit logs for a group
@@ -923,6 +924,15 @@ async function requestDeleteExport(req, res) {
         approvalId: approval.approvalId,
       });
     }
+
+    // Send push notification to other admins (fire and forget)
+    pushNotificationService.sendApprovalNotification(
+      groupId,
+      groupMember.groupMemberId,
+      'delete_log_export',
+      `${groupMember.displayName} wants to delete log export: "${logExport.fileName}"`,
+      approval.approvalId
+    ).catch(err => console.error('[Logs] Failed to send approval notification:', err));
 
     // Threshold not met yet, return pending approval
     res.status(200).json({
