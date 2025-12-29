@@ -9,10 +9,7 @@
 
 const { prisma } = require('../config/database');
 const billingService = require('../services/billing.service');
-const MailHogEmailService = require('../services/email/mailhogEmailService');
-
-// Initialize email service
-const emailService = new MailHogEmailService();
+const { emailService } = require('../services/email');
 
 // Base pricing constants (in cents)
 const BASE_SUBSCRIPTION_CENTS = 300; // $3.00 USD
