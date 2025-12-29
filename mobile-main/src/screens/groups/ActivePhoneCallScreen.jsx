@@ -20,6 +20,7 @@ import { getContrastTextColor } from '../../utils/colorUtils';
 import { CustomAlert } from '../../components/CustomAlert';
 import { useWebRTC } from '../../hooks/useWebRTC';
 import UserAvatar from '../../components/shared/UserAvatar';
+import AudioSettingsModal from '../../components/AudioSettingsModal';
 
 /**
  * Get color for participant status
@@ -60,6 +61,10 @@ export default function ActivePhoneCallScreen({ navigation, route }) {
   const [isRecording, setIsRecording] = useState(false);
   const [recordingStatus, setRecordingStatus] = useState('idle');
   const [isRecordingDisabled, setIsRecordingDisabled] = useState(false);
+
+  // Audio settings modal state
+  const [showAudioSettings, setShowAudioSettings] = useState(false);
+  const [participantVolumes, setParticipantVolumes] = useState({});
 
   const timerRef = useRef(null);
   const pollRef = useRef(null);
@@ -245,20 +250,36 @@ export default function ActivePhoneCallScreen({ navigation, route }) {
     toggleAudio(!newValue);
   };
 
-  const handleToggleSpeaker = async () => {
-    const newValue = !isSpeaker;
-    setIsSpeaker(newValue);
+  /**
+   * Handle output device change from audio settings modal
+   */
+  const handleOutputDeviceChange = async (device) => {
+    const useSpeaker = device === 'speaker';
+    setIsSpeaker(useSpeaker);
     try {
       await Audio.setAudioModeAsync({
         allowsRecordingIOS: true,
         playsInSilentModeIOS: true,
         staysActiveInBackground: true,
         shouldDuckAndroid: true,
-        playThroughEarpieceAndroid: !newValue,
+        playThroughEarpieceAndroid: !useSpeaker,
       });
     } catch (err) {
-      console.error('[ActivePhoneCall] Speaker toggle error:', err);
+      console.error('[ActivePhoneCall] Output device change error:', err);
     }
+  };
+
+  /**
+   * Handle participant volume change from audio settings modal
+   */
+  const handleParticipantVolumeChange = (groupMemberId, volume) => {
+    setParticipantVolumes(prev => ({ ...prev, [groupMemberId]: volume }));
+
+    // For web, we can adjust the HTMLMediaElement volume
+    if (Platform.OS === 'web' && remoteAudioRef.current) {
+      remoteAudioRef.current.volume = volume;
+    }
+    // Note: For mobile, individual participant volume control is more complex
   };
 
   /**
@@ -532,9 +553,9 @@ export default function ActivePhoneCallScreen({ navigation, route }) {
               iconColor="#fff"
               size={32}
               style={[styles.controlButton, isSpeaker && styles.controlButtonActive]}
-              onPress={handleToggleSpeaker}
+              onPress={() => setShowAudioSettings(true)}
             />
-            <Text style={styles.controlLabel}>Speaker</Text>
+            <Text style={styles.controlLabel}>Audio</Text>
           </View>
         </View>
 
@@ -574,6 +595,30 @@ export default function ActivePhoneCallScreen({ navigation, route }) {
           <Text style={styles.errorBannerText}>{webrtcError}</Text>
         </View>
       )}
+
+      {/* Audio Settings Modal */}
+      <AudioSettingsModal
+        visible={showAudioSettings}
+        onDismiss={() => setShowAudioSettings(false)}
+        participants={allParticipants
+          .filter(p => {
+            // If I'm the initiator, show participants (not myself)
+            // If I'm not the initiator, show the initiator (the other person)
+            return isInitiator ? !p.isInitiator : p.isInitiator;
+          })
+          .map(p => ({
+            groupMemberId: p.groupMemberId,
+            displayName: p.displayName,
+            iconLetters: p.iconLetters,
+            iconColor: p.iconColor,
+            volume: participantVolumes[p.groupMemberId] ?? 1.0,
+          }))}
+        onVolumeChange={handleParticipantVolumeChange}
+        outputDevice={isSpeaker ? 'speaker' : 'earpiece'}
+        onOutputDeviceChange={handleOutputDeviceChange}
+        isMuted={isMuted}
+        onMuteToggle={handleToggleMute}
+      />
     </View>
   );
 }

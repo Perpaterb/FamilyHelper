@@ -22,6 +22,7 @@ import { getContrastTextColor } from '../../utils/colorUtils';
 import { CustomAlert } from '../../components/CustomAlert';
 import { useWebRTC } from '../../hooks/useWebRTC';
 import UserAvatar from '../../components/shared/UserAvatar';
+import AudioSettingsModal from '../../components/AudioSettingsModal';
 
 // Import RTCView for mobile
 let RTCView = null;
@@ -71,6 +72,10 @@ export default function ActiveVideoCallScreen({ navigation, route }) {
   const [isRecording, setIsRecording] = useState(false);
   const [recordingStatus, setRecordingStatus] = useState('idle');
   const [isRecordingDisabled, setIsRecordingDisabled] = useState(false);
+
+  // Audio settings modal state
+  const [showAudioSettings, setShowAudioSettings] = useState(false);
+  const [participantVolumes, setParticipantVolumes] = useState({});
 
   const timerRef = useRef(null);
   const pollRef = useRef(null);
@@ -217,22 +222,39 @@ export default function ActiveVideoCallScreen({ navigation, route }) {
   };
 
   /**
-   * Toggle speaker on/off
+   * Handle output device change from audio settings modal
    */
-  const handleToggleSpeaker = async () => {
-    const newValue = !isSpeaker;
-    setIsSpeaker(newValue);
+  const handleOutputDeviceChange = async (device) => {
+    const useSpeaker = device === 'speaker';
+    setIsSpeaker(useSpeaker);
     try {
       await Audio.setAudioModeAsync({
         allowsRecordingIOS: true,
         playsInSilentModeIOS: true,
         staysActiveInBackground: true,
         shouldDuckAndroid: true,
-        playThroughEarpieceAndroid: !newValue,
+        playThroughEarpieceAndroid: !useSpeaker,
       });
     } catch (err) {
-      console.error('[ActiveVideoCall] Speaker toggle error:', err);
+      console.error('[ActiveVideoCall] Output device change error:', err);
     }
+  };
+
+  /**
+   * Handle participant volume change from audio settings modal
+   * This adjusts the volume of a specific remote stream
+   */
+  const handleParticipantVolumeChange = (groupMemberId, volume) => {
+    setParticipantVolumes(prev => ({ ...prev, [groupMemberId]: volume }));
+
+    // Find the audio element/track for this participant and adjust volume
+    // For web, we can adjust the HTMLMediaElement volume
+    // For mobile, we'd need to use a different approach (e.g., audio processing)
+    if (Platform.OS === 'web' && remoteVideoRef.current) {
+      remoteVideoRef.current.volume = volume;
+    }
+    // Note: For mobile, individual participant volume control is more complex
+    // and may require audio processing libraries
   };
 
   /**
@@ -676,7 +698,7 @@ export default function ActiveVideoCallScreen({ navigation, route }) {
             iconColor="#fff"
             size={28}
             style={[styles.controlButton, isSpeaker && styles.controlButtonSpeaker]}
-            onPress={handleToggleSpeaker}
+            onPress={() => setShowAudioSettings(true)}
           />
           {Platform.OS !== 'web' && (
             <IconButton
@@ -725,6 +747,30 @@ export default function ActiveVideoCallScreen({ navigation, route }) {
           <Text style={styles.errorBannerText}>{webrtcError}</Text>
         </View>
       )}
+
+      {/* Audio Settings Modal */}
+      <AudioSettingsModal
+        visible={showAudioSettings}
+        onDismiss={() => setShowAudioSettings(false)}
+        participants={allParticipants
+          .filter(p => {
+            // If I'm the initiator, show participants (not myself)
+            // If I'm not the initiator, show the initiator (the other person)
+            return isInitiator ? !p.isInitiator : p.isInitiator;
+          })
+          .map(p => ({
+            groupMemberId: p.groupMemberId,
+            displayName: p.displayName,
+            iconLetters: p.iconLetters,
+            iconColor: p.iconColor,
+            volume: participantVolumes[p.groupMemberId] ?? 1.0,
+          }))}
+        onVolumeChange={handleParticipantVolumeChange}
+        outputDevice={isSpeaker ? 'speaker' : 'earpiece'}
+        onOutputDeviceChange={handleOutputDeviceChange}
+        isMuted={isMuted}
+        onMuteToggle={handleToggleMute}
+      />
     </View>
   );
 }

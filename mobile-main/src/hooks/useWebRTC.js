@@ -530,14 +530,20 @@ export function useWebRTC({ groupId, callId, isActive, isInitiator, audioOnly = 
           }
         });
 
-        // Stop old track and replace in local stream
+        // Stop old track
         oldVideoTrack.stop();
-        localStream.removeTrack(oldVideoTrack);
-        localStream.addTrack(newVideoTrack);
 
-        // Update state
+        // Create a new MediaStream with the new video track and existing audio tracks
+        const audioTracks = localStream.getAudioTracks();
+        const MediaStreamClass = Platform.OS === 'web'
+          ? MediaStream
+          : require('react-native-webrtc').MediaStream;
+        const updatedStream = new MediaStreamClass([...audioTracks, newVideoTrack]);
+
+        // Update refs and state
+        localStreamRef.current = updatedStream;
         setCameraFacing(newFacing);
-        setLocalStream(localStream); // Trigger re-render
+        setLocalStream(updatedStream); // New reference triggers re-render
       }
     } catch (err) {
       console.error('[WebRTC] Camera switch error:', err.message);
