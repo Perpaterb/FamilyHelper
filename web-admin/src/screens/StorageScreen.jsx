@@ -266,7 +266,7 @@ export default function StorageScreen({ navigation }) {
     let files = groupFiles;
 
     // Status filtering logic:
-    // - No status filter selected: Show only "normal" files (not deleted, not pending)
+    // - No status filter selected: Show normal files + pending deletion (not deleted)
     // - Deleted selected: Show only deleted files
     // - Pending Deletion selected: Show only pending deletion files
     if (showDeleted) {
@@ -274,8 +274,8 @@ export default function StorageScreen({ navigation }) {
     } else if (showPendingDeletion) {
       files = files.filter(file => file.pendingDeletion === true);
     } else {
-      // Default: exclude deleted and pending deletion files
-      files = files.filter(file => !file.isDeleted && !file.pendingDeletion);
+      // Default: exclude only deleted files (pending deletion files are visible)
+      files = files.filter(file => !file.isDeleted);
     }
 
     return files;

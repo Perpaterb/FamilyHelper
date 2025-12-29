@@ -468,6 +468,15 @@ async function getApprovals(req, res) {
         case 'delete_group':
           description = `${requesterName} requested to delete the group "${data.groupName || 'this group'}"`;
           break;
+        case 'delete_file':
+          description = `${requesterName} requested to delete file "${data.fileName || 'unknown file'}"`;
+          break;
+        case 'delete_call_recording':
+          description = `${requesterName} requested to delete ${data.callType || 'call'} recording "${data.fileName || 'unknown'}"`;
+          break;
+        case 'delete_log_export':
+          description = `${requesterName} requested to delete log export "${data.fileName || 'unknown'}"`;
+          break;
         default:
           description = `${requesterName} requested approval for ${approval.approvalType.replace(/_/g, ' ')}`;
       }
@@ -739,16 +748,22 @@ async function voteOnApproval(req, res) {
         newStatus = 'rejected';
       }
     } else {
-      // Requires percentage (default 50%)
+      // Requires more than the threshold percentage (default 50%)
+      // Note: Using > instead of >= means a tie goes to rejection (status quo)
       const requiredPercentage = parseFloat(approval.requiredApprovalPercentage);
       const approvePercentage = (approveVotes / totalAdmins) * 100;
       const rejectPercentage = (rejectVotes / totalAdmins) * 100;
 
-      if (approvePercentage >= requiredPercentage) {
-        newStatus = 'approved';
-      } else if (rejectPercentage > (100 - requiredPercentage)) {
-        // If rejection percentage exceeds what's needed to block, reject
+      // Check rejection first - if enough votes to block, reject immediately
+      if (rejectPercentage >= (100 - requiredPercentage)) {
+        // Rejection threshold met - e.g., with 50% required, 50%+ rejection blocks
         newStatus = 'rejected';
+      } else if (approvePercentage > requiredPercentage) {
+        // Approval requires strictly more than threshold (ties go to rejection)
+        newStatus = 'approved';
+      } else if (approvePercentage === 100) {
+        // Special case: unanimous approval always passes
+        newStatus = 'approved';
       }
     }
 
