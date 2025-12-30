@@ -192,10 +192,12 @@ export default function SupportScreen({ navigation }) {
     const isOnTrial = !user.isSubscribed && trialEndDate > new Date();
 
     if (user.isSubscribed) {
+      const now = new Date();
+
       // Check if subscription was granted by support (permanent - 100 years)
+      // Could be set on either subscriptionEndDate or renewalDate
       if (user.subscriptionEndDate) {
         const endDate = new Date(user.subscriptionEndDate);
-        const now = new Date();
         const isPermanent = endDate.getFullYear() - now.getFullYear() > 5;
         if (isPermanent) {
           return { status: 'Permanent', color: '#4caf50', date: null };
@@ -207,6 +209,16 @@ export default function SupportScreen({ navigation }) {
           date: user.subscriptionEndDate,
         };
       }
+
+      // Check if renewalDate is permanent (100 years out)
+      if (user.renewalDate) {
+        const renewalDate = new Date(user.renewalDate);
+        const isPermanent = renewalDate.getFullYear() - now.getFullYear() > 5;
+        if (isPermanent) {
+          return { status: 'Permanent', color: '#4caf50', date: null };
+        }
+      }
+
       // Active subscription - show renewal date
       return {
         status: 'Subscribed',
