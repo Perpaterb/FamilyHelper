@@ -141,6 +141,25 @@ router.put(
 );
 
 /**
+ * PUT /support/users/:userId/renewal-date
+ * Set the renewal date (due date) for a user's subscription
+ *
+ * Request Body:
+ * - renewalDate: ISO date string
+ *
+ * Response:
+ * - 200: { success: true, message: string, renewalDate: date }
+ * - 403: Support access required
+ * - 404: User not found
+ */
+router.put(
+  '/users/:userId/renewal-date',
+  requireAuth,
+  supportController.requireSupportUser,
+  supportController.updateRenewalDate
+);
+
+/**
  * GET /support/audit-logs
  * Get support audit logs with pagination and filtering
  *

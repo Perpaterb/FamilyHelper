@@ -725,11 +725,85 @@ const checkAccess = async (req, res) => {
   }
 };
 
+/**
+ * PUT /support/users/:userId/renewal-date
+ * Set a specific renewal date for a user's subscription
+ * This is the "due date" - when the next payment is due
+ */
+const updateRenewalDate = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { renewalDate } = req.body;
+    const supportUser = req.user;
+    const ipAddress = req.ip || req.headers['x-forwarded-for'] || 'unknown';
+    const userAgent = req.headers['user-agent'] || 'unknown';
+
+    if (!renewalDate) {
+      return res.status(400).json({
+        success: false,
+        error: 'Renewal date is required',
+      });
+    }
+
+    const newRenewalDate = new Date(renewalDate);
+
+    const targetUser = await prisma.user.findUnique({
+      where: { userId },
+      select: {
+        userId: true,
+        email: true,
+        isSubscribed: true,
+        renewalDate: true,
+      },
+    });
+
+    if (!targetUser) {
+      return res.status(404).json({ success: false, error: 'User not found' });
+    }
+
+    const previousValue = JSON.stringify({
+      renewalDate: targetUser.renewalDate,
+    });
+
+    await prisma.user.update({
+      where: { userId },
+      data: { renewalDate: newRenewalDate },
+    });
+
+    // Create audit log
+    await createSupportAuditLog({
+      performedById: supportUser.userId,
+      performedByEmail: supportUser.email,
+      targetUserId: targetUser.userId,
+      targetUserEmail: targetUser.email,
+      action: 'update_renewal_date',
+      details: `Set renewal date to ${newRenewalDate.toISOString()}`,
+      previousValue,
+      newValue: JSON.stringify({ renewalDate: newRenewalDate }),
+      ipAddress,
+      userAgent,
+    });
+
+    return res.json({
+      success: true,
+      message: 'Renewal date updated',
+      renewalDate: newRenewalDate,
+    });
+  } catch (error) {
+    console.error('Error updating renewal date:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to update renewal date',
+    });
+  }
+};
+
 module.exports = {
   requireSupportUser,
   listUsers,
   updateSubscription,
   updateSubscriptionEndDate,
+  updateRenewalDate,
   expireSubscription,
   updateSupportAccess,
   updateLockStatus,

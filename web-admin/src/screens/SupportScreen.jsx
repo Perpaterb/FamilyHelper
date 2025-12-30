@@ -68,9 +68,10 @@ export default function SupportScreen({ navigation }) {
   const [userToLock, setUserToLock] = useState(null);
   const [lockReason, setLockReason] = useState('');
 
-  // Subscription end date editing state
+  // Date editing state
   const [editingUserId, setEditingUserId] = useState(null);
-  const [editingEndDate, setEditingEndDate] = useState('');
+  const [editingField, setEditingField] = useState(null); // 'renewal' or 'end'
+  const [editingDate, setEditingDate] = useState('');
 
   // Expire subscription dialog state
   const [expireDialogVisible, setExpireDialogVisible] = useState(false);
@@ -130,54 +131,65 @@ export default function SupportScreen({ navigation }) {
     }
   }
 
-  async function handleUpdateSubscriptionEndDate(user) {
-    if (!editingEndDate) {
+  async function handleUpdateDate(user) {
+    if (!editingDate) {
       setUsersError('Please enter a valid date');
       return;
     }
 
-    const newDate = new Date(editingEndDate);
-    if (newDate <= new Date()) {
-      setUsersError('Subscription end date must be in the future');
-      return;
-    }
+    const newDate = new Date(editingDate);
 
     try {
       setActionLoading(user.userId);
-      await api.put(`/support/users/${user.userId}/subscription-end-date`, {
-        subscriptionEndDate: newDate.toISOString(),
-      });
-      setSuccessMessage(`Subscription end date updated for ${user.email}`);
-      setEditingUserId(null);
-      setEditingEndDate('');
+
+      if (editingField === 'renewal') {
+        await api.put(`/support/users/${user.userId}/renewal-date`, {
+          renewalDate: newDate.toISOString(),
+        });
+        setSuccessMessage(`Due date updated for ${user.email}`);
+      } else {
+        await api.put(`/support/users/${user.userId}/subscription-end-date`, {
+          subscriptionEndDate: newDate.toISOString(),
+        });
+        setSuccessMessage(`End date updated for ${user.email}`);
+      }
+
+      cancelEditing();
       fetchUsers();
     } catch (err) {
-      console.error('Failed to update subscription end date:', err);
-      setUsersError(err.response?.data?.error || 'Failed to update subscription end date');
+      console.error('Failed to update date:', err);
+      setUsersError(err.response?.data?.error || 'Failed to update date');
     } finally {
       setActionLoading(null);
     }
   }
 
-  function startEditingEndDate(user) {
+  function startEditingRenewalDate(user) {
     setEditingUserId(user.userId);
-    // Use the displayed date (from subscription status) as default
-    const subStatus = getSubscriptionStatus(user);
-    if (subStatus.date) {
-      const date = new Date(subStatus.date);
-      setEditingEndDate(date.toISOString().split('T')[0]); // YYYY-MM-DD format
-    } else if (user.subscriptionEndDate) {
-      // Fallback to raw subscription end date
-      const date = new Date(user.subscriptionEndDate);
-      setEditingEndDate(date.toISOString().split('T')[0]);
+    setEditingField('renewal');
+    if (user.renewalDate) {
+      const date = new Date(user.renewalDate);
+      setEditingDate(date.toISOString().split('T')[0]);
     } else {
-      setEditingEndDate('');
+      setEditingDate('');
     }
   }
 
-  function cancelEditingEndDate() {
+  function startEditingEndDate(user) {
+    setEditingUserId(user.userId);
+    setEditingField('end');
+    if (user.subscriptionEndDate) {
+      const date = new Date(user.subscriptionEndDate);
+      setEditingDate(date.toISOString().split('T')[0]);
+    } else {
+      setEditingDate('');
+    }
+  }
+
+  function cancelEditing() {
     setEditingUserId(null);
-    setEditingEndDate('');
+    setEditingField(null);
+    setEditingDate('');
   }
 
   function getSubscriptionStatus(user) {
@@ -464,7 +476,8 @@ export default function SupportScreen({ navigation }) {
                     <DataTable.Header>
                       <DataTable.Title style={styles.userColumn}>User</DataTable.Title>
                       <DataTable.Title style={styles.statusColumn}>Status</DataTable.Title>
-                      <DataTable.Title style={styles.subscriptionColumn}>Renewal / End Date</DataTable.Title>
+                      <DataTable.Title style={styles.dateColumn}>Due Date</DataTable.Title>
+                      <DataTable.Title style={styles.dateColumn}>End Date</DataTable.Title>
                       <DataTable.Title style={styles.supportColumn}>Support</DataTable.Title>
                       <DataTable.Title style={styles.expireColumn}>Expire</DataTable.Title>
                       <DataTable.Title style={styles.lockColumn}>Lock</DataTable.Title>
@@ -526,12 +539,13 @@ export default function SupportScreen({ navigation }) {
                             </View>
                           </DataTable.Cell>
 
-                          <DataTable.Cell style={styles.subscriptionColumn}>
-                            {isEditing ? (
+                          {/* Due Date (renewalDate) */}
+                          <DataTable.Cell style={styles.dateColumn}>
+                            {isEditing && editingField === 'renewal' ? (
                               <View style={styles.editDateContainer}>
                                 <TextInput
-                                  value={editingEndDate}
-                                  onChangeText={setEditingEndDate}
+                                  value={editingDate}
+                                  onChangeText={setEditingDate}
                                   mode="outlined"
                                   dense
                                   placeholder="YYYY-MM-DD"
@@ -541,23 +555,62 @@ export default function SupportScreen({ navigation }) {
                                   icon="check"
                                   iconColor="#4caf50"
                                   size={18}
-                                  onPress={() => handleUpdateSubscriptionEndDate(user)}
+                                  onPress={() => handleUpdateDate(user)}
                                   disabled={actionLoading === user.userId}
                                 />
                                 <IconButton
                                   icon="close"
                                   iconColor="#d32f2f"
                                   size={18}
-                                  onPress={cancelEditingEndDate}
+                                  onPress={cancelEditing}
                                 />
-                                {actionLoading === user.userId && (
-                                  <ActivityIndicator size="small" />
-                                )}
                               </View>
                             ) : (
                               <View style={styles.dateDisplayContainer}>
                                 <Text style={styles.dateText}>
-                                  {subStatus.date ? formatDateShort(subStatus.date) : '—'}
+                                  {user.renewalDate ? formatDateShort(user.renewalDate) : '—'}
+                                </Text>
+                                <IconButton
+                                  icon="pencil"
+                                  iconColor="#666"
+                                  size={16}
+                                  onPress={() => startEditingRenewalDate(user)}
+                                  style={styles.editButton}
+                                />
+                              </View>
+                            )}
+                          </DataTable.Cell>
+
+                          {/* End Date (subscriptionEndDate) */}
+                          <DataTable.Cell style={styles.dateColumn}>
+                            {isEditing && editingField === 'end' ? (
+                              <View style={styles.editDateContainer}>
+                                <TextInput
+                                  value={editingDate}
+                                  onChangeText={setEditingDate}
+                                  mode="outlined"
+                                  dense
+                                  placeholder="YYYY-MM-DD"
+                                  style={styles.dateInput}
+                                />
+                                <IconButton
+                                  icon="check"
+                                  iconColor="#4caf50"
+                                  size={18}
+                                  onPress={() => handleUpdateDate(user)}
+                                  disabled={actionLoading === user.userId}
+                                />
+                                <IconButton
+                                  icon="close"
+                                  iconColor="#d32f2f"
+                                  size={18}
+                                  onPress={cancelEditing}
+                                />
+                              </View>
+                            ) : (
+                              <View style={styles.dateDisplayContainer}>
+                                <Text style={styles.dateText}>
+                                  {user.subscriptionEndDate ? formatDateShort(user.subscriptionEndDate) : '—'}
                                 </Text>
                                 <IconButton
                                   icon="pencil"
@@ -914,8 +967,8 @@ const styles = StyleSheet.create({
   statusColumn: {
     flex: 2,
   },
-  subscriptionColumn: {
-    flex: 2,
+  dateColumn: {
+    flex: 1.5,
     justifyContent: 'center',
   },
   supportColumn: {
