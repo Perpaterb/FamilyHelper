@@ -81,7 +81,7 @@ const createSupportAuditLog = async ({
 
 /**
  * GET /support/users
- * List all users with pagination and search
+ * List all users with pagination and search (by email only)
  */
 const listUsers = async (req, res) => {
   try {
@@ -91,12 +91,7 @@ const listUsers = async (req, res) => {
     const skip = (pageNum - 1) * limitNum;
 
     const where = search
-      ? {
-          OR: [
-            { email: { contains: search, mode: 'insensitive' } },
-            { displayName: { contains: search, mode: 'insensitive' } },
-          ],
-        }
+      ? { email: { contains: search, mode: 'insensitive' } }
       : {};
 
     const [users, total] = await Promise.all([
@@ -105,24 +100,15 @@ const listUsers = async (req, res) => {
         select: {
           userId: true,
           email: true,
-          displayName: true,
-          memberIcon: true,
-          iconColor: true,
-          profilePhotoFileId: true,
           isSubscribed: true,
-          subscriptionId: true,
           subscriptionEndDate: true,
           renewalDate: true,
-          subscriptionManuallyExpired: true,
-          storageLimitGb: true,
           isSupportUser: true,
           isLocked: true,
-          lockedAt: true,
           lockedReason: true,
           createdAt: true,
-          lastLogin: true,
         },
-        orderBy: { createdAt: 'desc' },
+        orderBy: { email: 'asc' },
         skip,
         take: limitNum,
       }),
@@ -142,6 +128,111 @@ const listUsers = async (req, res) => {
   } catch (error) {
     console.error('Error listing users:', error);
     return res.status(500).json({ success: false, error: 'Failed to list users' });
+  }
+};
+
+/**
+ * GET /support/users/:userId/billing-history
+ * Get billing history for a specific user
+ */
+const getUserBillingHistory = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const billingHistory = await prisma.billingHistory.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+    });
+
+    return res.json({
+      success: true,
+      billingHistory: billingHistory.map((record) => ({
+        billingId: record.billingId,
+        amount: record.amount,
+        amountFormatted: `$${(record.amount / 100).toFixed(2)}`,
+        status: record.status,
+        createdAt: record.createdAt,
+      })),
+    });
+  } catch (error) {
+    console.error('Error getting billing history:', error);
+    return res.status(500).json({ success: false, error: 'Failed to get billing history' });
+  }
+};
+
+/**
+ * PUT /support/users/:userId/subscribe-till
+ * Set subscription to active until a specific date
+ * Sets: isSubscribed=true, renewalDate=date, subscriptionEndDate=date
+ */
+const subscribeTill = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { date } = req.body;
+    const supportUser = req.user;
+    const ipAddress = req.ip || req.headers['x-forwarded-for'] || 'unknown';
+    const userAgent = req.headers['user-agent'] || 'unknown';
+
+    if (!date) {
+      return res.status(400).json({ success: false, error: 'Date is required' });
+    }
+
+    const subscribedTillDate = new Date(date);
+
+    const targetUser = await prisma.user.findUnique({
+      where: { userId },
+      select: {
+        userId: true,
+        email: true,
+        isSubscribed: true,
+        renewalDate: true,
+        subscriptionEndDate: true,
+      },
+    });
+
+    if (!targetUser) {
+      return res.status(404).json({ success: false, error: 'User not found' });
+    }
+
+    const previousValue = JSON.stringify({
+      isSubscribed: targetUser.isSubscribed,
+      renewalDate: targetUser.renewalDate,
+      subscriptionEndDate: targetUser.subscriptionEndDate,
+    });
+
+    const updateData = {
+      isSubscribed: true,
+      renewalDate: subscribedTillDate,
+      subscriptionEndDate: subscribedTillDate,
+      subscriptionManuallyExpired: false,
+    };
+
+    await prisma.user.update({
+      where: { userId },
+      data: updateData,
+    });
+
+    await createSupportAuditLog({
+      performedById: supportUser.userId,
+      performedByEmail: supportUser.email,
+      targetUserId: targetUser.userId,
+      targetUserEmail: targetUser.email,
+      action: 'subscribe_till',
+      details: `Set subscription till ${subscribedTillDate.toISOString().split('T')[0]}`,
+      previousValue,
+      newValue: JSON.stringify(updateData),
+      ipAddress,
+      userAgent,
+    });
+
+    return res.json({
+      success: true,
+      message: `Subscription set till ${subscribedTillDate.toISOString().split('T')[0]}`,
+    });
+  } catch (error) {
+    console.error('Error setting subscribe till:', error);
+    return res.status(500).json({ success: false, error: 'Failed to set subscription' });
   }
 };
 
@@ -585,6 +676,7 @@ const expireSubscription = async (req, res) => {
     const updateData = {
       isSubscribed: false,
       subscriptionEndDate: yesterday,
+      renewalDate: yesterday,
       subscriptionManuallyExpired: true,
     };
 
@@ -801,6 +893,8 @@ const updateRenewalDate = async (req, res) => {
 module.exports = {
   requireSupportUser,
   listUsers,
+  getUserBillingHistory,
+  subscribeTill,
   updateSubscription,
   updateSubscriptionEndDate,
   updateRenewalDate,

@@ -42,6 +42,43 @@ router.get(
 );
 
 /**
+ * GET /support/users/:userId/billing-history
+ * Get billing history for a specific user
+ *
+ * Response:
+ * - 200: { success: true, billingHistory: [...] }
+ * - 403: Support access required
+ * - 404: User not found
+ */
+router.get(
+  '/users/:userId/billing-history',
+  requireAuth,
+  supportController.requireSupportUser,
+  supportController.getUserBillingHistory
+);
+
+/**
+ * PUT /support/users/:userId/subscribe-till
+ * Set subscription to active until a specific date
+ * Sets: isSubscribed=true, renewalDate=date, subscriptionEndDate=date
+ *
+ * Request Body:
+ * - date: ISO date string
+ *
+ * Response:
+ * - 200: { success: true, message: string }
+ * - 400: Date is required
+ * - 403: Support access required
+ * - 404: User not found
+ */
+router.put(
+  '/users/:userId/subscribe-till',
+  requireAuth,
+  supportController.requireSupportUser,
+  supportController.subscribeTill
+);
+
+/**
  * PUT /support/users/:userId/subscription
  * Grant or revoke unlimited subscription access
  *

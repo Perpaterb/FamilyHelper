@@ -1,19 +1,18 @@
 /**
  * Support Screen
  *
- * Support-only screen for managing users.
+ * Simplified support-only screen for managing users.
  * Features:
- * - List all users with search
- * - Toggle subscription access
- * - Toggle support user access
- * - Lock/unlock accounts
+ * - List users by email only
+ * - Toggle support/lock status
+ * - Set "subscribed till" date (sets both renewalDate and subscriptionEndDate)
+ * - Expire subscription (sets both dates to yesterday)
+ * - Expandable billing history
  * - View support audit logs
- *
- * React Native Paper version for web-admin.
  */
 
 import React, { useState, useEffect } from 'react';
-import { View, ScrollView, StyleSheet } from 'react-native';
+import { View, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import {
   Text,
   Button,
@@ -29,13 +28,10 @@ import {
   Dialog,
   TextInput,
   Switch,
-  DataTable,
-  Avatar,
   SegmentedButtons,
 } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import api from '../services/api';
-import { getContrastTextColor } from '../utils/colorUtils';
 
 export default function SupportScreen({ navigation }) {
   // Tab state
@@ -50,6 +46,11 @@ export default function SupportScreen({ navigation }) {
   const [userTotalPages, setUserTotalPages] = useState(1);
   const [userTotal, setUserTotal] = useState(0);
 
+  // Expanded user for billing history
+  const [expandedUserId, setExpandedUserId] = useState(null);
+  const [billingHistory, setBillingHistory] = useState([]);
+  const [billingLoading, setBillingLoading] = useState(false);
+
   // Audit logs state
   const [auditLogs, setAuditLogs] = useState([]);
   const [logsLoading, setLogsLoading] = useState(false);
@@ -60,7 +61,7 @@ export default function SupportScreen({ navigation }) {
   const [logActionFilter, setLogActionFilter] = useState('');
 
   // Action state
-  const [actionLoading, setActionLoading] = useState(null); // userId being actioned
+  const [actionLoading, setActionLoading] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
 
   // Lock dialog state
@@ -68,10 +69,10 @@ export default function SupportScreen({ navigation }) {
   const [userToLock, setUserToLock] = useState(null);
   const [lockReason, setLockReason] = useState('');
 
-  // Date editing state
-  const [editingUserId, setEditingUserId] = useState(null);
-  const [editingField, setEditingField] = useState(null); // 'renewal' or 'end'
-  const [editingDate, setEditingDate] = useState('');
+  // Subscribe till dialog state
+  const [subscribeTillDialogVisible, setSubscribeTillDialogVisible] = useState(false);
+  const [userToSubscribe, setUserToSubscribe] = useState(null);
+  const [subscribeTillDate, setSubscribeTillDate] = useState('');
 
   // Expire subscription dialog state
   const [expireDialogVisible, setExpireDialogVisible] = useState(false);
@@ -109,6 +110,19 @@ export default function SupportScreen({ navigation }) {
     }
   }
 
+  async function fetchBillingHistory(userId) {
+    try {
+      setBillingLoading(true);
+      const response = await api.get(`/support/users/${userId}/billing-history`);
+      setBillingHistory(response.data.billingHistory || []);
+    } catch (err) {
+      console.error('Failed to fetch billing history:', err);
+      setBillingHistory([]);
+    } finally {
+      setBillingLoading(false);
+    }
+  }
+
   async function fetchAuditLogs() {
     try {
       setLogsLoading(true);
@@ -131,121 +145,33 @@ export default function SupportScreen({ navigation }) {
     }
   }
 
-  async function handleUpdateDate(user) {
-    if (!editingDate) {
-      setUsersError('Please enter a valid date');
-      return;
-    }
-
-    const newDate = new Date(editingDate);
-
-    try {
-      setActionLoading(user.userId);
-
-      if (editingField === 'renewal') {
-        await api.put(`/support/users/${user.userId}/renewal-date`, {
-          renewalDate: newDate.toISOString(),
-        });
-        setSuccessMessage(`Due date updated for ${user.email}`);
-      } else {
-        await api.put(`/support/users/${user.userId}/subscription-end-date`, {
-          subscriptionEndDate: newDate.toISOString(),
-        });
-        setSuccessMessage(`End date updated for ${user.email}`);
-      }
-
-      cancelEditing();
-      fetchUsers();
-    } catch (err) {
-      console.error('Failed to update date:', err);
-      setUsersError(err.response?.data?.error || 'Failed to update date');
-    } finally {
-      setActionLoading(null);
-    }
-  }
-
-  function startEditingRenewalDate(user) {
-    setEditingUserId(user.userId);
-    setEditingField('renewal');
-    if (user.renewalDate) {
-      const date = new Date(user.renewalDate);
-      setEditingDate(date.toISOString().split('T')[0]);
+  function toggleExpandUser(userId) {
+    if (expandedUserId === userId) {
+      setExpandedUserId(null);
+      setBillingHistory([]);
     } else {
-      setEditingDate('');
+      setExpandedUserId(userId);
+      fetchBillingHistory(userId);
     }
-  }
-
-  function startEditingEndDate(user) {
-    setEditingUserId(user.userId);
-    setEditingField('end');
-    if (user.subscriptionEndDate) {
-      const date = new Date(user.subscriptionEndDate);
-      setEditingDate(date.toISOString().split('T')[0]);
-    } else {
-      setEditingDate('');
-    }
-  }
-
-  function cancelEditing() {
-    setEditingUserId(null);
-    setEditingField(null);
-    setEditingDate('');
   }
 
   function getSubscriptionStatus(user) {
-    // Check if subscription was manually expired by support
-    if (user.subscriptionManuallyExpired) {
-      return { status: 'Manually Expired', color: '#d32f2f', date: user.subscriptionEndDate };
-    }
-
     // Calculate trial end date (20 days from account creation)
     const trialEndDate = new Date(user.createdAt);
     trialEndDate.setDate(trialEndDate.getDate() + 20);
     const isOnTrial = !user.isSubscribed && trialEndDate > new Date();
 
     if (user.isSubscribed) {
-      const now = new Date();
-
-      // Check if subscription was granted by support (permanent - 100 years)
-      // Could be set on either subscriptionEndDate or renewalDate
-      if (user.subscriptionEndDate) {
-        const endDate = new Date(user.subscriptionEndDate);
-        const isPermanent = endDate.getFullYear() - now.getFullYear() > 5;
-        if (isPermanent) {
-          return { status: 'Permanent', color: '#4caf50', date: null };
-        }
-        // Has end date set = cancelled, will end on that date
-        return {
-          status: 'Cancelling',
-          color: '#ff9800',
-          date: user.subscriptionEndDate,
-        };
-      }
-
-      // Check if renewalDate is permanent (100 years out)
-      if (user.renewalDate) {
-        const renewalDate = new Date(user.renewalDate);
-        const isPermanent = renewalDate.getFullYear() - now.getFullYear() > 5;
-        if (isPermanent) {
-          return { status: 'Permanent', color: '#4caf50', date: null };
-        }
-      }
-
-      // Active subscription - show renewal date
-      return {
-        status: 'Subscribed',
-        color: '#2196f3',
-        date: user.renewalDate,
-      };
+      return { status: 'Subscribed', color: '#4caf50' };
     } else if (isOnTrial) {
-      return { status: 'Trial', color: '#ff9800', date: trialEndDate.toISOString() };
+      return { status: 'Trial', color: '#ff9800' };
     } else {
-      return { status: 'Expired', color: '#d32f2f', date: null };
+      return { status: 'Expired', color: '#d32f2f' };
     }
   }
 
   function formatDateShort(dateString) {
-    if (!dateString) return 'N/A';
+    if (!dateString) return '—';
     return new Date(dateString).toLocaleDateString('en-AU', {
       year: 'numeric',
       month: 'short',
@@ -275,12 +201,10 @@ export default function SupportScreen({ navigation }) {
 
   async function handleToggleLock(user) {
     if (!user.isLocked) {
-      // Opening lock dialog
       setUserToLock(user);
       setLockReason('');
       setLockDialogVisible(true);
     } else {
-      // Unlocking directly
       try {
         setActionLoading(user.userId);
         await api.put(`/support/users/${user.userId}/lock`, {
@@ -314,6 +238,36 @@ export default function SupportScreen({ navigation }) {
     } catch (err) {
       console.error('Failed to lock account:', err);
       setUsersError(err.response?.data?.error || 'Failed to lock account');
+    } finally {
+      setActionLoading(null);
+    }
+  }
+
+  function handleSubscribeTillClick(user) {
+    setUserToSubscribe(user);
+    // Default to 1 year from now
+    const oneYearFromNow = new Date();
+    oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1);
+    setSubscribeTillDate(oneYearFromNow.toISOString().split('T')[0]);
+    setSubscribeTillDialogVisible(true);
+  }
+
+  async function handleSubscribeTillConfirm() {
+    if (!userToSubscribe || !subscribeTillDate) return;
+
+    try {
+      setActionLoading(userToSubscribe.userId);
+      await api.put(`/support/users/${userToSubscribe.userId}/subscribe-till`, {
+        date: subscribeTillDate,
+      });
+      setSuccessMessage(`Subscription set till ${subscribeTillDate} for ${userToSubscribe.email}`);
+      setSubscribeTillDialogVisible(false);
+      setUserToSubscribe(null);
+      setSubscribeTillDate('');
+      fetchUsers();
+    } catch (err) {
+      console.error('Failed to set subscription:', err);
+      setUsersError(err.response?.data?.error || 'Failed to set subscription');
     } finally {
       setActionLoading(null);
     }
@@ -367,7 +321,10 @@ export default function SupportScreen({ navigation }) {
     const labels = {
       grant_subscription: 'Granted Subscription',
       revoke_subscription: 'Revoked Subscription',
+      subscribe_till: 'Set Subscribe Till',
       update_subscription_end_date: 'Updated Sub End Date',
+      update_renewal_date: 'Updated Renewal Date',
+      expire_subscription: 'Expired Subscription',
       grant_support: 'Granted Support Access',
       revoke_support: 'Revoked Support Access',
       lock_user: 'Locked Account',
@@ -377,9 +334,10 @@ export default function SupportScreen({ navigation }) {
   }
 
   function getActionColor(action) {
-    if (action.includes('grant')) return '#4caf50';
-    if (action.includes('revoke')) return '#ff9800';
-    if (action === 'update_subscription_end_date') return '#9c27b0';
+    if (action.includes('grant') || action === 'subscribe_till') return '#4caf50';
+    if (action.includes('revoke') || action === 'expire_subscription') return '#ff9800';
+    if (action === 'update_subscription_end_date' || action === 'update_renewal_date')
+      return '#9c27b0';
     if (action === 'lock_user') return '#d32f2f';
     if (action === 'unlock_user') return '#2196f3';
     return '#666';
@@ -389,9 +347,7 @@ export default function SupportScreen({ navigation }) {
     <ScrollView style={styles.container}>
       <View style={styles.content}>
         <Title style={styles.pageTitle}>Support Dashboard</Title>
-        <Paragraph style={styles.pageSubtitle}>
-          Manage users and view support audit logs
-        </Paragraph>
+        <Paragraph style={styles.pageSubtitle}>Manage users and view support audit logs</Paragraph>
 
         {/* Success Message */}
         {successMessage && (
@@ -431,7 +387,7 @@ export default function SupportScreen({ navigation }) {
             <Card style={styles.card}>
               <Card.Content>
                 <TextInput
-                  label="Search users by email or name"
+                  label="Search by email"
                   value={searchQuery}
                   onChangeText={(text) => {
                     setSearchQuery(text);
@@ -441,10 +397,7 @@ export default function SupportScreen({ navigation }) {
                   left={<TextInput.Icon icon="magnify" />}
                   right={
                     searchQuery ? (
-                      <TextInput.Icon
-                        icon="close"
-                        onPress={() => setSearchQuery('')}
-                      />
+                      <TextInput.Icon icon="close" onPress={() => setSearchQuery('')} />
                     ) : null
                   }
                 />
@@ -467,195 +420,210 @@ export default function SupportScreen({ navigation }) {
                   </View>
                 ) : users.length === 0 ? (
                   <Text style={styles.noResultsText}>
-                    {searchQuery
-                      ? 'No users match your search'
-                      : 'No users found'}
+                    {searchQuery ? 'No users match your search' : 'No users found'}
                   </Text>
                 ) : (
-                  <DataTable>
-                    <DataTable.Header>
-                      <DataTable.Title style={styles.userColumn}>User</DataTable.Title>
-                      <DataTable.Title style={styles.statusColumn}>Status</DataTable.Title>
-                      <DataTable.Title style={styles.dateColumn}>Due Date</DataTable.Title>
-                      <DataTable.Title style={styles.dateColumn}>End Date</DataTable.Title>
-                      <DataTable.Title style={styles.supportColumn}>Support</DataTable.Title>
-                      <DataTable.Title style={styles.expireColumn}>Expire</DataTable.Title>
-                      <DataTable.Title style={styles.lockColumn}>Lock</DataTable.Title>
-                    </DataTable.Header>
+                  <View style={styles.usersList}>
+                    {/* Header Row */}
+                    <View style={styles.tableHeader}>
+                      <Text style={[styles.headerCell, styles.emailCol]}>Email</Text>
+                      <Text style={[styles.headerCell, styles.statusCol]}>Status</Text>
+                      <Text style={[styles.headerCell, styles.dateCol]}>Due Date</Text>
+                      <Text style={[styles.headerCell, styles.actionsCol]}>Actions</Text>
+                    </View>
 
                     {users.map((user) => {
                       const subStatus = getSubscriptionStatus(user);
-                      const isEditing = editingUserId === user.userId;
+                      const isExpanded = expandedUserId === user.userId;
 
                       return (
-                        <DataTable.Row key={user.userId}>
-                          <DataTable.Cell style={styles.userColumn}>
-                            <View style={styles.userCell}>
-                              <Avatar.Text
-                                size={32}
-                                label={user.memberIcon || user.displayName?.substring(0, 2) || '?'}
-                                style={{
-                                  backgroundColor: user.iconColor || '#6200ee',
-                                }}
-                                color={getContrastTextColor(user.iconColor || '#6200ee')}
+                        <View key={user.userId}>
+                          {/* User Row */}
+                          <TouchableOpacity
+                            style={styles.userRow}
+                            onPress={() => toggleExpandUser(user.userId)}
+                          >
+                            {/* Email */}
+                            <View style={[styles.cell, styles.emailCol]}>
+                              <MaterialCommunityIcons
+                                name={isExpanded ? 'chevron-down' : 'chevron-right'}
+                                size={20}
+                                color="#666"
                               />
-                              <View style={styles.userInfo}>
-                                <Text style={styles.userName} numberOfLines={1}>
-                                  {user.displayName || 'No name'}
-                                </Text>
-                                <Text style={styles.userEmail} numberOfLines={1}>
-                                  {user.email}
-                                </Text>
-                              </View>
+                              <Text style={styles.emailText} numberOfLines={1}>
+                                {user.email}
+                              </Text>
                             </View>
-                          </DataTable.Cell>
 
-                          <DataTable.Cell style={styles.statusColumn}>
-                            <View style={styles.statusBadges}>
-                              <Chip
-                                style={[styles.statusChip, { backgroundColor: subStatus.color + '20' }]}
-                                textStyle={[styles.statusChipText, { color: subStatus.color }]}
-                              >
-                                {subStatus.status}
-                              </Chip>
-                              {user.isLocked && (
+                            {/* Status badges */}
+                            <View style={[styles.cell, styles.statusCol]}>
+                              <View style={styles.statusBadges}>
                                 <Chip
-                                  style={styles.lockedChip}
-                                  textStyle={styles.lockedChipText}
-                                  icon="lock"
+                                  style={[
+                                    styles.statusChip,
+                                    { backgroundColor: subStatus.color + '20' },
+                                  ]}
+                                  textStyle={[styles.statusChipText, { color: subStatus.color }]}
                                 >
-                                  Locked
+                                  {subStatus.status}
                                 </Chip>
-                              )}
-                              {user.isSupportUser && (
-                                <Chip
-                                  style={styles.supportChip}
-                                  textStyle={styles.supportChipText}
-                                  icon="shield-account"
-                                >
-                                  Support
-                                </Chip>
-                              )}
+                                {user.isSupportUser && (
+                                  <Chip
+                                    style={styles.supportChip}
+                                    textStyle={styles.supportChipText}
+                                    icon="shield-account"
+                                  >
+                                    Support
+                                  </Chip>
+                                )}
+                                {user.isLocked && (
+                                  <Chip
+                                    style={styles.lockedChip}
+                                    textStyle={styles.lockedChipText}
+                                    icon="lock"
+                                  >
+                                    Locked
+                                  </Chip>
+                                )}
+                              </View>
                             </View>
-                          </DataTable.Cell>
 
-                          {/* Due Date (renewalDate) */}
-                          <DataTable.Cell style={styles.dateColumn}>
-                            {isEditing && editingField === 'renewal' ? (
-                              <View style={styles.editDateContainer}>
-                                <TextInput
-                                  value={editingDate}
-                                  onChangeText={setEditingDate}
-                                  mode="outlined"
-                                  dense
-                                  placeholder="YYYY-MM-DD"
-                                  style={styles.dateInput}
-                                />
-                                <IconButton
-                                  icon="check"
-                                  iconColor="#4caf50"
-                                  size={18}
-                                  onPress={() => handleUpdateDate(user)}
-                                  disabled={actionLoading === user.userId}
-                                />
-                                <IconButton
-                                  icon="close"
-                                  iconColor="#d32f2f"
-                                  size={18}
-                                  onPress={cancelEditing}
-                                />
-                              </View>
-                            ) : (
-                              <View style={styles.dateDisplayContainer}>
-                                <Text style={styles.dateText}>
-                                  {user.renewalDate ? formatDateShort(user.renewalDate) : '—'}
-                                </Text>
-                                <IconButton
-                                  icon="pencil"
-                                  iconColor="#666"
-                                  size={16}
-                                  onPress={() => startEditingRenewalDate(user)}
-                                  style={styles.editButton}
-                                />
-                              </View>
-                            )}
-                          </DataTable.Cell>
-
-                          {/* End Date (subscriptionEndDate) */}
-                          <DataTable.Cell style={styles.dateColumn}>
-                            {isEditing && editingField === 'end' ? (
-                              <View style={styles.editDateContainer}>
-                                <TextInput
-                                  value={editingDate}
-                                  onChangeText={setEditingDate}
-                                  mode="outlined"
-                                  dense
-                                  placeholder="YYYY-MM-DD"
-                                  style={styles.dateInput}
-                                />
-                                <IconButton
-                                  icon="check"
-                                  iconColor="#4caf50"
-                                  size={18}
-                                  onPress={() => handleUpdateDate(user)}
-                                  disabled={actionLoading === user.userId}
-                                />
-                                <IconButton
-                                  icon="close"
-                                  iconColor="#d32f2f"
-                                  size={18}
-                                  onPress={cancelEditing}
-                                />
-                              </View>
-                            ) : (
-                              <View style={styles.dateDisplayContainer}>
-                                <Text style={styles.dateText}>
-                                  {user.subscriptionEndDate ? formatDateShort(user.subscriptionEndDate) : '—'}
-                                </Text>
-                                <IconButton
-                                  icon="pencil"
-                                  iconColor="#666"
-                                  size={16}
-                                  onPress={() => startEditingEndDate(user)}
-                                  style={styles.editButton}
-                                />
-                              </View>
-                            )}
-                          </DataTable.Cell>
-
-                          <DataTable.Cell style={styles.supportColumn}>
-                            <View style={styles.switchContainer}>
-                              <Switch
-                                value={user.isSupportUser}
-                                onValueChange={() => handleToggleSupportAccess(user)}
-                                disabled={actionLoading === user.userId}
-                              />
+                            {/* Due Date */}
+                            <View style={[styles.cell, styles.dateCol]}>
+                              <Text style={styles.dateText}>
+                                {formatDateShort(user.renewalDate)}
+                              </Text>
                             </View>
-                          </DataTable.Cell>
 
-                          <DataTable.Cell style={styles.expireColumn}>
-                            <IconButton
-                              icon="clock-alert-outline"
-                              iconColor={subStatus.status === 'Expired' || subStatus.status === 'Manually Expired' ? '#999' : '#ff9800'}
-                              size={20}
-                              onPress={() => handleExpireClick(user)}
-                              disabled={actionLoading === user.userId || subStatus.status === 'Expired' || subStatus.status === 'Manually Expired'}
-                            />
-                          </DataTable.Cell>
+                            {/* Actions */}
+                            <View style={[styles.cell, styles.actionsCol]}>
+                              <View style={styles.actionsRow}>
+                                {/* Support Toggle */}
+                                <View style={styles.actionItem}>
+                                  <Text style={styles.actionLabel}>Support</Text>
+                                  <Switch
+                                    value={user.isSupportUser}
+                                    onValueChange={() => handleToggleSupportAccess(user)}
+                                    disabled={actionLoading === user.userId}
+                                  />
+                                </View>
 
-                          <DataTable.Cell style={styles.lockColumn}>
-                            <IconButton
-                              icon={user.isLocked ? 'lock-open' : 'lock'}
-                              iconColor={user.isLocked ? '#4caf50' : '#d32f2f'}
-                              size={20}
-                              onPress={() => handleToggleLock(user)}
-                              disabled={actionLoading === user.userId}
-                            />
-                          </DataTable.Cell>
-                        </DataTable.Row>
+                                {/* Lock Toggle */}
+                                <IconButton
+                                  icon={user.isLocked ? 'lock-open' : 'lock'}
+                                  iconColor={user.isLocked ? '#4caf50' : '#d32f2f'}
+                                  size={22}
+                                  onPress={() => handleToggleLock(user)}
+                                  disabled={actionLoading === user.userId}
+                                  style={styles.actionButton}
+                                />
+
+                                {/* Subscribe Till */}
+                                <IconButton
+                                  icon="calendar-plus"
+                                  iconColor="#2196f3"
+                                  size={22}
+                                  onPress={() => handleSubscribeTillClick(user)}
+                                  disabled={actionLoading === user.userId}
+                                  style={styles.actionButton}
+                                />
+
+                                {/* Expire */}
+                                <IconButton
+                                  icon="clock-alert-outline"
+                                  iconColor={subStatus.status === 'Expired' ? '#999' : '#ff9800'}
+                                  size={22}
+                                  onPress={() => handleExpireClick(user)}
+                                  disabled={
+                                    actionLoading === user.userId ||
+                                    subStatus.status === 'Expired'
+                                  }
+                                  style={styles.actionButton}
+                                />
+                              </View>
+                            </View>
+                          </TouchableOpacity>
+
+                          {/* Expanded Billing History */}
+                          {isExpanded && (
+                            <View style={styles.expandedSection}>
+                              <Text style={styles.expandedTitle}>Billing History</Text>
+                              {billingLoading ? (
+                                <ActivityIndicator size="small" />
+                              ) : billingHistory.length === 0 ? (
+                                <Text style={styles.noBillingText}>No billing records found</Text>
+                              ) : (
+                                <View style={styles.billingList}>
+                                  {billingHistory.map((record) => (
+                                    <View key={record.billingId} style={styles.billingRecord}>
+                                      <Text style={styles.billingAmount}>
+                                        {record.amountFormatted}
+                                      </Text>
+                                      <Chip
+                                        style={[
+                                          styles.billingStatusChip,
+                                          {
+                                            backgroundColor:
+                                              record.status === 'succeeded'
+                                                ? '#e8f5e9'
+                                                : '#fff3e0',
+                                          },
+                                        ]}
+                                        textStyle={{
+                                          fontSize: 10,
+                                          color:
+                                            record.status === 'succeeded' ? '#2e7d32' : '#e65100',
+                                        }}
+                                      >
+                                        {record.status}
+                                      </Chip>
+                                      <Text style={styles.billingDate}>
+                                        {formatDateShort(record.createdAt)}
+                                      </Text>
+                                    </View>
+                                  ))}
+                                </View>
+                              )}
+
+                              {/* Additional User Info */}
+                              <View style={styles.userDetails}>
+                                <View style={styles.detailRow}>
+                                  <Text style={styles.detailLabel}>User ID:</Text>
+                                  <Text style={styles.detailValue}>{user.userId}</Text>
+                                </View>
+                                <View style={styles.detailRow}>
+                                  <Text style={styles.detailLabel}>Created:</Text>
+                                  <Text style={styles.detailValue}>
+                                    {formatDateShort(user.createdAt)}
+                                  </Text>
+                                </View>
+                                <View style={styles.detailRow}>
+                                  <Text style={styles.detailLabel}>Due Date:</Text>
+                                  <Text style={styles.detailValue}>
+                                    {formatDateShort(user.renewalDate)}
+                                  </Text>
+                                </View>
+                                <View style={styles.detailRow}>
+                                  <Text style={styles.detailLabel}>End Date:</Text>
+                                  <Text style={styles.detailValue}>
+                                    {formatDateShort(user.subscriptionEndDate)}
+                                  </Text>
+                                </View>
+                                {user.isLocked && user.lockedReason && (
+                                  <View style={styles.detailRow}>
+                                    <Text style={styles.detailLabel}>Lock Reason:</Text>
+                                    <Text style={styles.detailValue}>{user.lockedReason}</Text>
+                                  </View>
+                                )}
+                              </View>
+                            </View>
+                          )}
+
+                          <Divider />
+                        </View>
                       );
                     })}
-                  </DataTable>
+                  </View>
                 )}
 
                 {/* Pagination */}
@@ -742,9 +710,7 @@ export default function SupportScreen({ navigation }) {
                         >
                           {getActionLabel(log.action)}
                         </Chip>
-                        <Text style={styles.logDate}>
-                          {formatDate(log.createdAt)}
-                        </Text>
+                        <Text style={styles.logDate}>{formatDate(log.createdAt)}</Text>
                       </View>
 
                       <View style={styles.logBody}>
@@ -806,23 +772,18 @@ export default function SupportScreen({ navigation }) {
         <Surface style={styles.infoBox}>
           <MaterialCommunityIcons name="information" size={20} color="#1976d2" />
           <Text style={styles.infoText}>
-            All support actions are logged and cannot be deleted. This ensures
-            accountability and compliance with audit requirements.
+            All support actions are logged and cannot be deleted. This ensures accountability and
+            compliance with audit requirements.
           </Text>
         </Surface>
       </View>
 
       {/* Lock Confirmation Dialog */}
       <Portal>
-        <Dialog
-          visible={lockDialogVisible}
-          onDismiss={() => setLockDialogVisible(false)}
-        >
+        <Dialog visible={lockDialogVisible} onDismiss={() => setLockDialogVisible(false)}>
           <Dialog.Title>Lock User Account</Dialog.Title>
           <Dialog.Content>
-            <Paragraph>
-              Lock account for {userToLock?.email}?
-            </Paragraph>
+            <Paragraph>Lock account for {userToLock?.email}?</Paragraph>
             <Paragraph style={styles.dialogWarning}>
               This will prevent the user from accessing their account.
             </Paragraph>
@@ -849,23 +810,52 @@ export default function SupportScreen({ navigation }) {
         </Dialog>
       </Portal>
 
-      {/* Expire Subscription Dialog */}
+      {/* Subscribe Till Dialog */}
       <Portal>
         <Dialog
-          visible={expireDialogVisible}
-          onDismiss={() => setExpireDialogVisible(false)}
+          visible={subscribeTillDialogVisible}
+          onDismiss={() => setSubscribeTillDialogVisible(false)}
         >
+          <Dialog.Title>Set Subscription Date</Dialog.Title>
+          <Dialog.Content>
+            <Paragraph>Set subscription for {userToSubscribe?.email}?</Paragraph>
+            <Paragraph style={styles.dialogInfo}>
+              This will set both the due date and end date to the specified date.
+            </Paragraph>
+            <TextInput
+              label="Subscribe till date"
+              value={subscribeTillDate}
+              onChangeText={setSubscribeTillDate}
+              mode="outlined"
+              placeholder="YYYY-MM-DD"
+              style={styles.dateInput}
+            />
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button onPress={() => setSubscribeTillDialogVisible(false)}>Cancel</Button>
+            <Button
+              onPress={handleSubscribeTillConfirm}
+              loading={actionLoading === userToSubscribe?.userId}
+              textColor="#4caf50"
+            >
+              Set Subscription
+            </Button>
+          </Dialog.Actions>
+        </Dialog>
+      </Portal>
+
+      {/* Expire Subscription Dialog */}
+      <Portal>
+        <Dialog visible={expireDialogVisible} onDismiss={() => setExpireDialogVisible(false)}>
           <Dialog.Title>Expire Subscription</Dialog.Title>
           <Dialog.Content>
-            <Paragraph>
-              Expire subscription for {userToExpire?.email}?
-            </Paragraph>
+            <Paragraph>Expire subscription for {userToExpire?.email}?</Paragraph>
             <Paragraph style={styles.dialogWarning}>
-              This will set their subscription end date to yesterday.
+              This will set both dates to yesterday.
             </Paragraph>
             <Paragraph style={styles.dialogInfo}>
-              • Groups where they're the only admin will become read-only{'\n'}
-              • In groups with other admins, their role will change to adult
+              {'\u2022'} Groups where they're the only admin will become read-only{'\n'}
+              {'\u2022'} In groups with other admins, their role will change to adult
             </Paragraph>
           </Dialog.Content>
           <Dialog.Actions>
@@ -961,57 +951,61 @@ const styles = StyleSheet.create({
     color: '#666',
   },
   // Users table
-  userColumn: {
-    flex: 3,
+  usersList: {
+    marginTop: 8,
   },
-  statusColumn: {
-    flex: 2,
+  tableHeader: {
+    flexDirection: 'row',
+    paddingVertical: 12,
+    backgroundColor: '#f5f5f5',
+    borderRadius: 4,
+    marginBottom: 8,
   },
-  dateColumn: {
-    flex: 1.5,
-    justifyContent: 'center',
+  headerCell: {
+    fontWeight: '600',
+    fontSize: 13,
+    color: '#666',
+    paddingHorizontal: 8,
   },
-  supportColumn: {
-    flex: 1,
-    justifyContent: 'center',
-  },
-  expireColumn: {
-    flex: 0.5,
-    justifyContent: 'center',
-  },
-  lockColumn: {
-    flex: 0.5,
-    justifyContent: 'center',
-  },
-  userCell: {
+  userRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 8,
+    paddingVertical: 12,
+    minHeight: 60,
   },
-  userInfo: {
-    marginLeft: 12,
+  cell: {
+    paddingHorizontal: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  emailCol: {
+    flex: 2,
+  },
+  statusCol: {
+    flex: 2,
+  },
+  dateCol: {
     flex: 1,
   },
-  userName: {
-    fontWeight: '500',
-    fontSize: 14,
+  actionsCol: {
+    flex: 2.5,
+    justifyContent: 'flex-end',
   },
-  userEmail: {
-    fontSize: 12,
-    color: '#666',
+  emailText: {
+    fontSize: 14,
+    marginLeft: 8,
+    flex: 1,
   },
   statusBadges: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 4,
   },
-  lockedChip: {
-    backgroundColor: '#ffebee',
+  statusChip: {
     height: 24,
   },
-  lockedChipText: {
+  statusChipText: {
     fontSize: 10,
-    color: '#d32f2f',
   },
   supportChip: {
     backgroundColor: '#e3f2fd',
@@ -1021,12 +1015,94 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: '#1565c0',
   },
-  switchContainer: {
+  lockedChip: {
+    backgroundColor: '#ffebee',
+    height: 24,
+  },
+  lockedChipText: {
+    fontSize: 10,
+    color: '#d32f2f',
+  },
+  dateText: {
+    fontSize: 13,
+    color: '#333',
+  },
+  actionsRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 4,
   },
-  actionLoader: {
-    marginLeft: 8,
+  actionItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  actionLabel: {
+    fontSize: 11,
+    color: '#666',
+  },
+  actionButton: {
+    margin: 0,
+  },
+  // Expanded section
+  expandedSection: {
+    backgroundColor: '#fafafa',
+    padding: 16,
+    marginLeft: 28,
+    marginBottom: 8,
+    borderRadius: 8,
+  },
+  expandedTitle: {
+    fontWeight: '600',
+    fontSize: 14,
+    marginBottom: 12,
+    color: '#333',
+  },
+  noBillingText: {
+    color: '#666',
+    fontSize: 12,
+    fontStyle: 'italic',
+  },
+  billingList: {
+    gap: 8,
+    marginBottom: 16,
+  },
+  billingRecord: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  billingAmount: {
+    fontWeight: '600',
+    fontSize: 14,
+    width: 80,
+  },
+  billingStatusChip: {
+    height: 22,
+  },
+  billingDate: {
+    fontSize: 12,
+    color: '#666',
+  },
+  userDetails: {
+    borderTopWidth: 1,
+    borderTopColor: '#e0e0e0',
+    paddingTop: 12,
+    gap: 4,
+  },
+  detailRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  detailLabel: {
+    fontSize: 12,
+    color: '#666',
+    width: 100,
+  },
+  detailValue: {
+    fontSize: 12,
+    color: '#333',
+    flex: 1,
   },
   // Pagination
   pagination: {
@@ -1130,34 +1206,7 @@ const styles = StyleSheet.create({
   lockReasonInput: {
     marginTop: 16,
   },
-  // Subscription status chip
-  statusChip: {
-    height: 24,
-  },
-  statusChipText: {
-    fontSize: 10,
-  },
-  // Date editing
-  editDateContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
   dateInput: {
-    width: 110,
-    height: 36,
-    fontSize: 12,
-  },
-  dateDisplayContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  dateText: {
-    fontSize: 13,
-    color: '#333',
-  },
-  editButton: {
-    margin: 0,
-    marginLeft: 4,
+    marginTop: 16,
   },
 });
