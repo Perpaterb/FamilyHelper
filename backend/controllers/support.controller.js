@@ -680,17 +680,10 @@ const expireSubscription = async (req, res) => {
       subscriptionManuallyExpired: true,
     };
 
-    console.log('[ExpireSubscription] Updating user:', userId);
-    console.log('[ExpireSubscription] Setting dates to:', yesterday.toISOString());
-    console.log('[ExpireSubscription] Update data:', JSON.stringify(updateData));
-
-    const updatedUser = await prisma.user.update({
+    await prisma.user.update({
       where: { userId },
       data: updateData,
     });
-
-    console.log('[ExpireSubscription] Updated user renewalDate:', updatedUser.renewalDate);
-    console.log('[ExpireSubscription] Updated user subscriptionEndDate:', updatedUser.subscriptionEndDate);
 
     // Handle group admin expiry logic
     const groupMemberships = await prisma.groupMember.findMany({
