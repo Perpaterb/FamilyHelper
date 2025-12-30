@@ -399,8 +399,8 @@ export default function SubscriptionScreen({ navigation }) {
           </View>
         )}
 
-        {/* Current Bill Card - Show when invoice available and subscribed or on trial */}
-        {invoice && (subscription?.isSubscribed || isOnFreeTrial()) && (
+        {/* Current Bill Card - Show for subscribed, trial, or expired users so they can pay */}
+        {invoice && (subscription?.isSubscribed || isOnFreeTrial() || isExpired()) && (
           <Card style={styles.billCard}>
             <Card.Content>
               <View style={styles.billHeader}>
