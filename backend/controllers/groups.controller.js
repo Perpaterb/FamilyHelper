@@ -200,10 +200,14 @@ async function getGroups(req, res) {
             select: {
               isSubscribed: true,
               createdAt: true,
+              subscriptionManuallyExpired: true,
+              subscriptionEndDate: true,
             },
           });
           const daysSinceCreation = user ? (Date.now() - new Date(user.createdAt).getTime()) / (1000 * 60 * 60 * 24) : Infinity;
-          const isOnTrial = user && !user.isSubscribed && daysSinceCreation <= 20;
+          // User is on trial if: not subscribed, account < 20 days old, AND not expired
+          const isExpired = user?.subscriptionManuallyExpired || (user?.subscriptionEndDate && new Date(user.subscriptionEndDate) < new Date());
+          const isOnTrial = user && !user.isSubscribed && !isExpired && daysSinceCreation <= 20;
           const userCreatedThisGroup = membership.group.createdByUserId === userId;
 
           // User gets admin role if:
@@ -470,6 +474,8 @@ async function getGroupById(req, res) {
           select: {
             isSubscribed: true,
             createdAt: true,
+            subscriptionManuallyExpired: true,
+            subscriptionEndDate: true,
           },
         },
       },
@@ -690,7 +696,9 @@ async function getGroupById(req, res) {
 
     // Trial users get admin-level permissions ONLY on groups they created (20-day trial)
     const daysSinceCreation = membership.user ? (Date.now() - new Date(membership.user.createdAt).getTime()) / (1000 * 60 * 60 * 24) : Infinity;
-    const isOnTrial = membership.user && !membership.user.isSubscribed && daysSinceCreation <= 20;
+    // User is on trial if: not subscribed, account < 20 days old, AND not expired
+    const isExpired = membership.user?.subscriptionManuallyExpired || (membership.user?.subscriptionEndDate && new Date(membership.user.subscriptionEndDate) < new Date());
+    const isOnTrial = membership.user && !membership.user.isSubscribed && !isExpired && daysSinceCreation <= 20;
     const userCreatedThisGroup = group.createdByUserId === userId;
 
     // User gets admin role if:
@@ -867,6 +875,8 @@ async function createGroup(req, res) {
       select: {
         isSubscribed: true,
         createdAt: true,
+        subscriptionManuallyExpired: true,
+        subscriptionEndDate: true,
       },
     });
 
@@ -877,9 +887,10 @@ async function createGroup(req, res) {
       });
     }
 
-    // Calculate if user is on trial (account created within last 20 days and not subscribed)
+    // Calculate if user is on trial (account created within last 20 days, not subscribed, AND not expired)
     const daysSinceCreation = (Date.now() - new Date(user.createdAt).getTime()) / (1000 * 60 * 60 * 24);
-    const isOnTrial = !user.isSubscribed && daysSinceCreation <= 20;
+    const isExpired = user.subscriptionManuallyExpired || (user.subscriptionEndDate && new Date(user.subscriptionEndDate) < new Date());
+    const isOnTrial = !user.isSubscribed && !isExpired && daysSinceCreation <= 20;
 
     const hasAccess = user.isSubscribed || isOnTrial;
     if (!hasAccess) {
@@ -1057,9 +1068,10 @@ async function inviteMember(req, res) {
         });
       }
 
-      // Check if user is on trial
+      // Check if user is on trial (not subscribed, not expired, account < 20 days)
       const daysSinceCreation = (Date.now() - new Date(targetUser.createdAt).getTime()) / (1000 * 60 * 60 * 24);
-      const isOnTrial = !targetUser.isSubscribed && daysSinceCreation <= 20;
+      const isExpired = targetUser.subscriptionManuallyExpired || (targetUser.subscriptionEndDate && new Date(targetUser.subscriptionEndDate) < new Date());
+      const isOnTrial = !targetUser.isSubscribed && !isExpired && daysSinceCreation <= 20;
 
       // Trial users cannot be added as additional admins
       // They can only be the first admin (when creating a group)
@@ -2122,6 +2134,8 @@ async function changeMemberRole(req, res) {
             displayName: true,
             isSubscribed: true,
             createdAt: true,
+            subscriptionManuallyExpired: true,
+            subscriptionEndDate: true,
           },
         },
       },
@@ -2141,6 +2155,8 @@ async function changeMemberRole(req, res) {
               displayName: true,
               isSubscribed: true,
               createdAt: true,
+              subscriptionManuallyExpired: true,
+              subscriptionEndDate: true,
             },
           },
         },
@@ -2202,7 +2218,8 @@ async function changeMemberRole(req, res) {
       }
 
       const daysSinceCreation = (Date.now() - new Date(targetUser.createdAt).getTime()) / (1000 * 60 * 60 * 24);
-      const isOnTrial = !targetUser.isSubscribed && daysSinceCreation <= 20;
+      const isExpired = targetUser.subscriptionManuallyExpired || (targetUser.subscriptionEndDate && new Date(targetUser.subscriptionEndDate) < new Date());
+      const isOnTrial = !targetUser.isSubscribed && !isExpired && daysSinceCreation <= 20;
 
       // If user is on trial, they cannot be added as an additional admin
       // Trial users can only be the FIRST admin (group creator)

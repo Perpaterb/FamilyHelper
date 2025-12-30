@@ -213,6 +213,38 @@ const subscribeTill = async (req, res) => {
       data: updateData,
     });
 
+    // Restore read-only groups where this user is admin
+    const adminMemberships = await prisma.groupMember.findMany({
+      where: {
+        userId: userId,
+        role: 'admin',
+      },
+      include: {
+        group: {
+          select: {
+            groupId: true,
+            name: true,
+            hasActiveAdmin: true,
+          },
+        },
+      },
+    });
+
+    const groupsRestored = [];
+    for (const membership of adminMemberships) {
+      if (!membership.group.hasActiveAdmin) {
+        await prisma.group.update({
+          where: { groupId: membership.group.groupId },
+          data: { hasActiveAdmin: true },
+        });
+        groupsRestored.push(membership.group.name);
+      }
+    }
+
+    if (groupsRestored.length > 0) {
+      console.log(`[Support] Restored ${groupsRestored.length} group(s) from read-only: ${groupsRestored.join(', ')}`);
+    }
+
     await createSupportAuditLog({
       performedById: supportUser.userId,
       performedByEmail: supportUser.email,
@@ -229,6 +261,7 @@ const subscribeTill = async (req, res) => {
     return res.json({
       success: true,
       message: `Subscription set till ${subscribedTillDate.toISOString().split('T')[0]}`,
+      groupsRestored: groupsRestored,
     });
   } catch (error) {
     console.error('Error setting subscribe till:', error);
