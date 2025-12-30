@@ -236,6 +236,11 @@ export default function SubscriptionScreen({ navigation }) {
   function isOnFreeTrial() {
     if (!subscription || subscription.isSubscribed) return false;
 
+    // If subscription was manually expired (endDate in the past), not on trial
+    if (subscription.endDate && new Date(subscription.endDate) < new Date()) {
+      return false;
+    }
+
     const now = new Date();
     const createdAt = new Date(subscription.createdAt);
     const trialEndDate = new Date(createdAt);
@@ -348,13 +353,6 @@ export default function SubscriptionScreen({ navigation }) {
                   </View>
                 </View>
               </Card.Content>
-              {subscription?.isSubscribed && (
-                <Card.Actions style={styles.cardActions}>
-                  <Chip style={styles.activeChip} textStyle={styles.activeChipText}>
-                    Active Subscription
-                  </Chip>
-                </Card.Actions>
-              )}
             </Card>
 
             {/* Additional Storage Card */}
@@ -509,31 +507,27 @@ export default function SubscriptionScreen({ navigation }) {
                       styles.statusChip,
                       isManuallyExpired() ? styles.chipError :
                       isOnFreeTrial() ? styles.chipInfo :
-                      subscription.endDate ? styles.chipWarning : styles.chipSuccess
+                      styles.chipSuccess
                     ]}
                     textStyle={styles.chipText}
                   >
-                    {isManuallyExpired() ? 'Manually Expired' :
+                    {isManuallyExpired() ? 'Expired' :
                      isOnFreeTrial() ? 'Free Trial' :
-                     subscription.endDate ? 'Canceling' : 'Active'}
+                     'Active'}
                   </Chip>
 
                   <Text style={styles.statusLabel}>Subscription Started</Text>
                   <Text style={styles.statusValue}>{formatDate(subscription.startDate)}</Text>
 
-                  {/* Show Next Billing Date for all users (permanent will have far future date) */}
-                  {(subscription.stripe?.currentPeriodEnd || subscription.endDate || isOnFreeTrial()) && (
-                    <>
-                      <Text style={styles.statusLabel}>
-                        {isOnFreeTrial() ? 'Last day of access' : subscription.endDate ? 'Last day of access' : 'Next Billing Date'}
-                      </Text>
-                      <Text style={styles.statusValue}>
-                        {isOnFreeTrial()
-                          ? formatDate(getTrialEndDate())
-                          : formatDate(subscription.stripe?.currentPeriodEnd || subscription.endDate)}
-                      </Text>
-                    </>
-                  )}
+                  {/* Show subscription/trial end date */}
+                  <Text style={styles.statusLabel}>
+                    {isOnFreeTrial() ? 'Trial Ends' : 'Subscription Ends'}
+                  </Text>
+                  <Text style={styles.statusValue}>
+                    {isOnFreeTrial()
+                      ? formatDate(getTrialEndDate())
+                      : formatDate(subscription.endDate || subscription.renewalDate)}
+                  </Text>
                 </View>
 
                 <View style={styles.statusColumn}>
@@ -555,98 +549,6 @@ export default function SubscriptionScreen({ navigation }) {
                 </View>
               </View>
 
-              {/* Cancel or Reactivate Button - Hidden for trial users, disabled for permanent subscriptions */}
-              {!isOnFreeTrial() && (
-                <View style={styles.actionSection}>
-                  <Divider style={styles.divider} />
-                  {subscription.endDate && !isPermanentSubscription() ? (
-                    // Show Reactivate button if subscription is canceled but still active (not permanent)
-                    <>
-                      <Button
-                        mode="outlined"
-                        onPress={() => setShowReactivateDialog(true)}
-                        loading={reactivating}
-                        disabled={reactivating}
-                        style={styles.reactivateButton}
-                        textColor="#4caf50"
-                      >
-                        Reactivate Subscription
-                      </Button>
-                      <Text style={styles.actionNote}>
-                        Keep your access active by reactivating your subscription
-                      </Text>
-                    </>
-                  ) : (
-                    // Show Cancel button if subscription is active (disabled for permanent)
-                    <>
-                      <Button
-                        mode="outlined"
-                        onPress={() => setShowCancelDialog(true)}
-                        loading={canceling}
-                        disabled={canceling || isPermanentSubscription()}
-                        style={[styles.cancelButton, isPermanentSubscription() && styles.buttonDisabled]}
-                        textColor="#d32f2f"
-                      >
-                        Cancel Subscription
-                      </Button>
-                      <Text style={styles.actionNote}>
-                        {isPermanentSubscription()
-                          ? 'Permanent subscriptions cannot be canceled'
-                          : 'Access will continue until the end of your current billing period'}
-                      </Text>
-                    </>
-                  )}
-                </View>
-              )}
-
-              {/* Cancellation Warning Message - not for permanent subscriptions */}
-              {subscription.endDate && !isPermanentSubscription() && (
-                <Surface style={styles.alertWarning}>
-                  <Text style={styles.alertWarningText}>
-                    Your subscription has been canceled. Your last day of access will be {formatDate(subscription.endDate)}. You can reactivate above to keep your access.
-                  </Text>
-                </Surface>
-              )}
-            </Card.Content>
-          </Card>
-        )}
-
-        {/* What happens when you cancel - Info Card */}
-        {subscription?.isSubscribed && !subscription.endDate && (
-          <Card style={styles.infoCard}>
-            <Card.Content>
-              <View style={styles.infoCardHeader}>
-                <MaterialCommunityIcons name="information-outline" size={22} color="#1976d2" />
-                <Title style={styles.infoCardTitle}>What happens if you cancel?</Title>
-              </View>
-              <Divider style={styles.divider} />
-              <View style={styles.infoItem}>
-                <MaterialCommunityIcons name="account-group" size={20} color="#666" />
-                <View style={styles.infoItemContent}>
-                  <Text style={styles.infoItemTitle}>Groups where you're the only admin</Text>
-                  <Text style={styles.infoItemText}>
-                    All members get 30 days of read-only access. After 30 days, the group becomes archived (data preserved but inaccessible).
-                  </Text>
-                </View>
-              </View>
-              <View style={styles.infoItem}>
-                <MaterialCommunityIcons name="account-switch" size={20} color="#666" />
-                <View style={styles.infoItemContent}>
-                  <Text style={styles.infoItemTitle}>Groups with other admins</Text>
-                  <Text style={styles.infoItemText}>
-                    Your role changes to "Adult" and you lose admin privileges. Other subscribed admins continue managing the group normally.
-                  </Text>
-                </View>
-              </View>
-              <View style={styles.infoItem}>
-                <MaterialCommunityIcons name="database" size={20} color="#666" />
-                <View style={styles.infoItemContent}>
-                  <Text style={styles.infoItemTitle}>Your data</Text>
-                  <Text style={styles.infoItemText}>
-                    All your messages, files, and content remain preserved. Nothing is deleted when you cancel.
-                  </Text>
-                </View>
-              </View>
             </Card.Content>
           </Card>
         )}

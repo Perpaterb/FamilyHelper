@@ -209,15 +209,6 @@ describe('SubscriptionScreen', () => {
       });
     });
 
-    it('should show active subscription chip', async () => {
-      const { toJSON } = renderSubscriptionScreen();
-
-      await waitFor(() => {
-        const tree = JSON.stringify(toJSON());
-        expect(tree).toContain('Active Subscription');
-      });
-    });
-
     it('should display Current Subscription section', async () => {
       const { toJSON } = renderSubscriptionScreen();
 
@@ -240,66 +231,12 @@ describe('SubscriptionScreen', () => {
       });
     });
 
-    it('should show cancel subscription button', async () => {
+    it('should display subscription ends date', async () => {
       const { toJSON } = renderSubscriptionScreen();
 
       await waitFor(() => {
         const tree = JSON.stringify(toJSON());
-        expect(tree).toContain('Cancel Subscription');
-      });
-    });
-
-    it('should display next billing date', async () => {
-      const { toJSON } = renderSubscriptionScreen();
-
-      await waitFor(() => {
-        const tree = JSON.stringify(toJSON());
-        expect(tree).toContain('Next Billing Date');
-      });
-    });
-  });
-
-  describe('Canceled Subscription State', () => {
-    beforeEach(() => {
-      api.get.mockImplementation((url) => {
-        if (url === '/subscriptions/pricing') {
-          return Promise.resolve({ data: { pricing: mockPricing } });
-        }
-        if (url === '/subscriptions/current') {
-          return Promise.resolve({ data: { subscription: mockCanceledSubscription } });
-        }
-        if (url === '/subscriptions/invoice') {
-          return Promise.resolve({ data: { invoice: mockInvoice } });
-        }
-        return Promise.reject(new Error('Not found'));
-      });
-    });
-
-    it('should show canceling status', async () => {
-      const { toJSON } = renderSubscriptionScreen();
-
-      await waitFor(() => {
-        const tree = JSON.stringify(toJSON());
-        expect(tree).toContain('Canceling');
-      });
-    });
-
-    it('should show reactivate button', async () => {
-      const { toJSON } = renderSubscriptionScreen();
-
-      await waitFor(() => {
-        const tree = JSON.stringify(toJSON());
-        expect(tree).toContain('Reactivate Subscription');
-      });
-    });
-
-    it('should show cancellation warning message', async () => {
-      const { toJSON } = renderSubscriptionScreen();
-
-      await waitFor(() => {
-        const tree = JSON.stringify(toJSON());
-        expect(tree).toContain('Your subscription has been canceled');
-        expect(tree).toContain('You can reactivate');
+        expect(tree).toContain('Subscription Ends');
       });
     });
   });
@@ -329,69 +266,13 @@ describe('SubscriptionScreen', () => {
       });
     });
 
-    it('should show last day of access for trial', async () => {
+    it('should show trial ends label for trial users', async () => {
       const { toJSON } = renderSubscriptionScreen();
 
       await waitFor(() => {
         const tree = JSON.stringify(toJSON());
-        expect(tree).toContain('Last day of access');
+        expect(tree).toContain('Trial Ends');
       });
-    });
-
-    it('should not show cancel button for trial users', async () => {
-      const { toJSON } = renderSubscriptionScreen();
-
-      await waitFor(() => {
-        const tree = JSON.stringify(toJSON());
-        // Free trial users shouldn't see cancel button
-        expect(tree).not.toContain('Cancel Subscription');
-      });
-    });
-  });
-
-  describe('Subscription Actions', () => {
-    it('should show cancel dialog when cancel button is clicked', async () => {
-      api.get.mockImplementation((url) => {
-        if (url === '/subscriptions/pricing') {
-          return Promise.resolve({ data: { pricing: mockPricing } });
-        }
-        if (url === '/subscriptions/current') {
-          return Promise.resolve({ data: { subscription: mockActiveSubscription } });
-        }
-        if (url === '/subscriptions/invoice') {
-          return Promise.resolve({ data: { invoice: mockInvoice } });
-        }
-        return Promise.reject(new Error('Not found'));
-      });
-
-      const { root, toJSON } = renderSubscriptionScreen();
-
-      await waitFor(() => {
-        const tree = JSON.stringify(toJSON());
-        expect(tree).toContain('Cancel Subscription');
-      });
-
-      const buttons = root.findAllByType('button');
-      // Find cancel button - it should be after "Active Subscription" chip
-      // Look for the button that contains red text color for cancel
-      const cancelButton = buttons.find((btn) => {
-        try {
-          // Check if it's a cancel button based on style
-          return btn.props?.children?.[0]?.props?.children?.[0]?.props?.style?.color === 'rgba(211,47,47,1.00)';
-        } catch {
-          return false;
-        }
-      });
-
-      if (cancelButton) {
-        fireEvent.press(cancelButton);
-
-        await waitFor(() => {
-          const tree = JSON.stringify(toJSON());
-          expect(tree).toContain('Cancel Subscription?');
-          expect(tree).toContain('No, Keep It');
-        });
-      }
     });
   });
 
