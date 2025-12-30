@@ -109,6 +109,40 @@ Admins need tools to manage their storage and avoid overage charges. The Storage
 - Access ends at end of current billing period (not immediately)
 - Ensures legal continuity for co-parenting documentation
 
+**Subscription Expiry Handling:**
+
+When an admin's subscription expires (trial ends or payment fails), the following happens:
+
+*For groups where they are the ONLY admin:*
+- Group enters **Read-Only Mode** (`hasActiveAdmin = false`)
+- "READ ONLY - No Active Admin" badge appears on group card and dashboard
+- All members can still VIEW everything but cannot:
+  - Send messages in message groups
+  - Create/edit calendar events
+  - Make phone or video calls
+  - Create/edit wiki pages
+  - Upload/modify secure documents
+  - Create/edit finance matters
+  - Create/edit Secret Santa
+  - Create/edit group item/gift registries
+- **Personal item/gift registries are unaffected** (users can still manage their own)
+- Data is preserved - group can be reactivated when admin subscribes
+
+*For groups where there are OTHER subscribed admins:*
+- Expired admin's role automatically changes from `admin` to `adult`
+- They retain access as a regular adult member
+- Other admins continue to manage the group normally
+- If they re-subscribe, an existing admin can promote them back to admin
+
+*Reactivation:*
+- When the expired user subscribes again, groups they were sole admin of will need manual reactivation
+- Support can also manually restore admin status via the Support Dashboard
+
+*Support Dashboard Tools:*
+- "Expire Subscription" button - Sets subscription end date to yesterday for testing
+- Shows which groups were affected and how (read-only vs role change)
+- All actions logged in Support Audit Log
+
 **Group Admin Requirements:**
 - Groups require at least one admin at all times - UI prevents last admin from leaving
 - If last admin's subscription expires: Show banner "Group will be archived on [DATE] because [ADMIN]'s subscription ends"
