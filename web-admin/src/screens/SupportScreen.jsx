@@ -181,6 +181,11 @@ export default function SupportScreen({ navigation }) {
   }
 
   function getSubscriptionStatus(user) {
+    // Check if subscription was manually expired by support
+    if (user.subscriptionManuallyExpired) {
+      return { status: 'Manually Expired', color: '#d32f2f', date: user.subscriptionEndDate };
+    }
+
     // Calculate trial end date (20 days from account creation)
     const trialEndDate = new Date(user.createdAt);
     trialEndDate.setDate(trialEndDate.getDate() + 20);
@@ -556,10 +561,10 @@ export default function SupportScreen({ navigation }) {
                           <DataTable.Cell style={styles.expireColumn}>
                             <IconButton
                               icon="clock-alert-outline"
-                              iconColor={subStatus.status === 'Expired' ? '#999' : '#ff9800'}
+                              iconColor={subStatus.status === 'Expired' || subStatus.status === 'Manually Expired' ? '#999' : '#ff9800'}
                               size={20}
                               onPress={() => handleExpireClick(user)}
-                              disabled={actionLoading === user.userId || subStatus.status === 'Expired'}
+                              disabled={actionLoading === user.userId || subStatus.status === 'Expired' || subStatus.status === 'Manually Expired'}
                             />
                           </DataTable.Cell>
 

@@ -310,6 +310,10 @@ export default function MyAccountScreen({ navigation }) {
    * Get subscription status color
    */
   const getSubscriptionColor = () => {
+    // Red for manually expired
+    if (subscriptionStatus?.subscriptionManuallyExpired || subscriptionStatus?.status === 'manually_expired') {
+      return '#d32f2f';
+    }
     if (subscriptionStatus?.isActive) {
       // Yellow/orange for canceling, green for active
       if (subscriptionStatus?.cancelAtPeriodEnd) {
@@ -324,6 +328,10 @@ export default function MyAccountScreen({ navigation }) {
    * Get subscription status text
    */
   const getSubscriptionStatusText = () => {
+    // Check for manually expired first
+    if (subscriptionStatus?.subscriptionManuallyExpired || subscriptionStatus?.status === 'manually_expired') {
+      return 'Manually Expired';
+    }
     if (subscriptionStatus?.isActive) {
       // Check if subscription is scheduled for cancellation
       if (subscriptionStatus?.cancelAtPeriodEnd) {

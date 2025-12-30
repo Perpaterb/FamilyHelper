@@ -266,6 +266,14 @@ export default function SubscriptionScreen({ navigation }) {
     return subscription?.isPermanent === true;
   }
 
+  /**
+   * Check if subscription was manually expired by support
+   * @returns {boolean} True if manually expired
+   */
+  function isManuallyExpired() {
+    return subscription?.subscriptionManuallyExpired === true || subscription?.status === 'manually_expired';
+  }
+
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -487,7 +495,7 @@ export default function SubscriptionScreen({ navigation }) {
         )}
 
         {/* Current Subscription Status */}
-        {(subscription?.isSubscribed || isOnFreeTrial()) && (
+        {(subscription?.isSubscribed || isOnFreeTrial() || isManuallyExpired()) && (
           <Card style={styles.statusCard}>
             <Card.Content>
               <Title>Current Subscription</Title>
@@ -499,12 +507,14 @@ export default function SubscriptionScreen({ navigation }) {
                   <Chip
                     style={[
                       styles.statusChip,
+                      isManuallyExpired() ? styles.chipError :
                       isOnFreeTrial() ? styles.chipInfo :
                       subscription.endDate ? styles.chipWarning : styles.chipSuccess
                     ]}
                     textStyle={styles.chipText}
                   >
-                    {isOnFreeTrial() ? 'Free Trial' :
+                    {isManuallyExpired() ? 'Manually Expired' :
+                     isOnFreeTrial() ? 'Free Trial' :
                      subscription.endDate ? 'Canceling' : 'Active'}
                   </Chip>
 
@@ -642,7 +652,7 @@ export default function SubscriptionScreen({ navigation }) {
         )}
 
         {/* No Subscription Message */}
-        {!subscription?.isSubscribed && !isOnFreeTrial() && !loading && (
+        {!subscription?.isSubscribed && !isOnFreeTrial() && !isManuallyExpired() && !loading && (
           <Card style={styles.statusCard}>
             <Card.Content>
               <Title>Current Subscription</Title>
@@ -874,6 +884,9 @@ const styles = StyleSheet.create({
   },
   chipInfo: {
     backgroundColor: '#e3f2fd',
+  },
+  chipError: {
+    backgroundColor: '#ffebee',
   },
   chipText: {
     fontSize: 12,

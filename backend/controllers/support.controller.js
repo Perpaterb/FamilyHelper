@@ -112,6 +112,7 @@ const listUsers = async (req, res) => {
           isSubscribed: true,
           subscriptionId: true,
           subscriptionEndDate: true,
+          subscriptionManuallyExpired: true,
           storageLimitGb: true,
           isSupportUser: true,
           isLocked: true,
@@ -558,6 +559,7 @@ const expireSubscription = async (req, res) => {
         subscriptionId: true,
         subscriptionStartDate: true,
         subscriptionEndDate: true,
+        subscriptionManuallyExpired: true,
         storageLimitGb: true,
       },
     });
@@ -571,6 +573,7 @@ const expireSubscription = async (req, res) => {
       subscriptionId: targetUser.subscriptionId,
       subscriptionStartDate: targetUser.subscriptionStartDate,
       subscriptionEndDate: targetUser.subscriptionEndDate,
+      subscriptionManuallyExpired: targetUser.subscriptionManuallyExpired,
       storageLimitGb: targetUser.storageLimitGb,
     });
 
@@ -581,6 +584,7 @@ const expireSubscription = async (req, res) => {
     const updateData = {
       isSubscribed: false,
       subscriptionEndDate: yesterday,
+      subscriptionManuallyExpired: true,
     };
 
     await prisma.user.update({

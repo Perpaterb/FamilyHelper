@@ -238,6 +238,7 @@ async function getCurrentSubscription(req, res) {
         createdAt: true,
         subscriptionStartDate: true,
         subscriptionEndDate: true,
+        subscriptionManuallyExpired: true,
         isSupportUser: true,
       },
     });
@@ -324,24 +325,41 @@ async function getCurrentSubscription(req, res) {
         },
       });
     } else {
-      // Calculate trial days remaining (20 days from account creation)
-      const accountAge = Date.now() - new Date(user.createdAt).getTime();
-      const daysElapsed = Math.floor(accountAge / (24 * 60 * 60 * 1000));
-      const daysRemaining = Math.max(0, 20 - daysElapsed);
+      // Check if subscription was manually expired by support
+      if (user.subscriptionManuallyExpired) {
+        res.status(200).json({
+          success: true,
+          subscription: {
+            isActive: false,
+            isSubscribed: false,
+            subscriptionManuallyExpired: true,
+            plan: 'None',
+            status: 'manually_expired',
+            endDate: user.subscriptionEndDate,
+            createdAt: user.createdAt,
+            storageUsedGb: storageUsedGb,
+          },
+        });
+      } else {
+        // Calculate trial days remaining (20 days from account creation)
+        const accountAge = Date.now() - new Date(user.createdAt).getTime();
+        const daysElapsed = Math.floor(accountAge / (24 * 60 * 60 * 1000));
+        const daysRemaining = Math.max(0, 20 - daysElapsed);
 
-      res.status(200).json({
-        success: true,
-        subscription: {
-          isActive: false,
-          isSubscribed: false, // Frontend expects this field
-          plan: 'Free Trial',
-          status: 'trial',
-          daysRemaining: daysRemaining,
-          trialEndsAt: new Date(new Date(user.createdAt).getTime() + 20 * 24 * 60 * 60 * 1000).toISOString(),
-          createdAt: user.createdAt, // For frontend trial calculation
-          storageUsedGb: storageUsedGb,
-        },
-      });
+        res.status(200).json({
+          success: true,
+          subscription: {
+            isActive: false,
+            isSubscribed: false, // Frontend expects this field
+            plan: 'Free Trial',
+            status: 'trial',
+            daysRemaining: daysRemaining,
+            trialEndsAt: new Date(new Date(user.createdAt).getTime() + 20 * 24 * 60 * 60 * 1000).toISOString(),
+            createdAt: user.createdAt, // For frontend trial calculation
+            storageUsedGb: storageUsedGb,
+          },
+        });
+      }
     }
   } catch (error) {
     console.error('Get current subscription error:', error);
