@@ -182,6 +182,7 @@ async function getGroups(req, res) {
             createdAt: true,
             isHidden: true,
             createdByUserId: true, // Include creator to check if user created this group
+            hasActiveAdmin: true, // For read-only status when no active admin
           },
         },
       },
@@ -393,6 +394,7 @@ async function getGroups(req, res) {
             backgroundImageId: membership.group.backgroundImageId,
             createdAt: membership.group.createdAt,
             isHidden: membership.group.isHidden,
+            hasActiveAdmin: membership.group.hasActiveAdmin,
             role: effectiveRole, // Use effective role (admin during trial)
             displayName: membership.displayName,
             isMuted: membership.isMuted,
@@ -492,6 +494,7 @@ async function getGroupById(req, res) {
         createdAt: true,
         isHidden: true,
         createdByUserId: true, // Include creator to check if user created this group
+        hasActiveAdmin: true, // For read-only status when no active admin
         members: {
           select: {
             groupMemberId: true, // IMPORTANT: Include this for member selection in message groups

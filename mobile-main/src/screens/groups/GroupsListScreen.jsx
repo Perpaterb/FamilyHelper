@@ -371,6 +371,16 @@ export default function GroupsListScreen({ navigation }) {
                 MUTED
               </Chip>
             )}
+            {item.hasActiveAdmin === false && (
+              <Chip
+                mode="outlined"
+                style={{ backgroundColor: '#d32f2f', marginLeft: 8 }}
+                textStyle={{ color: '#fff', fontSize: 12 }}
+                icon="lock"
+              >
+                READ ONLY
+              </Chip>
+            )}
             {/* Badge counts */}
             {(item.unreadMentionsCount > 0 || item.unreadMessagesCount > 0 || item.pendingApprovalsCount > 0 || item.pendingFinanceCount > 0 || item.pendingCalendarCount > 0 || item.upcomingRemindersCount > 0) && (
               <View style={styles.badgesRow}>

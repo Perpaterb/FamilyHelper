@@ -122,6 +122,25 @@ router.put(
 );
 
 /**
+ * PUT /support/users/:userId/expire-subscription
+ * Expire a user's subscription (set end date to yesterday)
+ * Also handles group admin expiry logic:
+ * - Groups where they're the only admin: group becomes read-only
+ * - Groups with other admins: their role changes from admin to adult
+ *
+ * Response:
+ * - 200: { success: true, message: string, groupsAffected: {...} }
+ * - 403: Support access required
+ * - 404: User not found
+ */
+router.put(
+  '/users/:userId/expire-subscription',
+  requireAuth,
+  supportController.requireSupportUser,
+  supportController.expireSubscription
+);
+
+/**
  * GET /support/audit-logs
  * Get support audit logs with pagination and filtering
  *

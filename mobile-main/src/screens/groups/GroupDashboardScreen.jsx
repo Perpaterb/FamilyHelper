@@ -438,6 +438,16 @@ export default function GroupDashboardScreen({ navigation, route }) {
                 ADMIN
               </Chip>
             )}
+            {groupInfo.hasActiveAdmin === false && (
+              <Chip
+                mode="outlined"
+                style={styles.readOnlyChip}
+                textStyle={styles.readOnlyText}
+                icon="lock"
+              >
+                READ ONLY - No Active Admin
+              </Chip>
+            )}
           </View>
           {/* Settings Cog Icon - Only for admins */}
           {groupInfo.userRole === 'admin' && (
@@ -764,6 +774,16 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#1976d2',
     textTransform: 'capitalize',
+  },
+  readOnlyChip: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#ffebee',
+    borderColor: '#d32f2f',
+    marginTop: 8,
+  },
+  readOnlyText: {
+    fontSize: 12,
+    color: '#d32f2f',
   },
   settingsButton: {
     width: 48,

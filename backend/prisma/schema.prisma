@@ -77,6 +77,7 @@ model Group {
   createdByTrialUser        Boolean                         @default(false) @map("created_by_trial_user")
   createdByUserId           String?                         @map("created_by_user_id") @db.Uuid
   readOnlyUntil             DateTime?                       @map("read_only_until") @db.Timestamp(6)
+  hasActiveAdmin            Boolean                         @default(true) @map("has_active_admin")
   adminPermissions          AdminPermission[]
   approvals                 Approval[]
   auditLogs                 AuditLog[]

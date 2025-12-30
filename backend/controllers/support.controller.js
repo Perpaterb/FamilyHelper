@@ -536,6 +536,165 @@ const updateSubscriptionEndDate = async (req, res) => {
 };
 
 /**
+ * PUT /support/users/:userId/expire-subscription
+ * Expire a user's subscription by setting the end date to yesterday
+ * This also handles the group admin expiry logic:
+ * - Groups where they're the only admin: group becomes read-only (hasActiveAdmin = false)
+ * - Groups with other admins: their role changes from admin to adult
+ */
+const expireSubscription = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const supportUser = req.user;
+    const ipAddress = req.ip || req.headers['x-forwarded-for'] || 'unknown';
+    const userAgent = req.headers['user-agent'] || 'unknown';
+
+    const targetUser = await prisma.user.findUnique({
+      where: { userId },
+      select: {
+        userId: true,
+        email: true,
+        isSubscribed: true,
+        subscriptionId: true,
+        subscriptionStartDate: true,
+        subscriptionEndDate: true,
+        storageLimitGb: true,
+      },
+    });
+
+    if (!targetUser) {
+      return res.status(404).json({ success: false, error: 'User not found' });
+    }
+
+    const previousValue = JSON.stringify({
+      isSubscribed: targetUser.isSubscribed,
+      subscriptionId: targetUser.subscriptionId,
+      subscriptionStartDate: targetUser.subscriptionStartDate,
+      subscriptionEndDate: targetUser.subscriptionEndDate,
+      storageLimitGb: targetUser.storageLimitGb,
+    });
+
+    // Set subscription end date to yesterday to expire it
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    const updateData = {
+      isSubscribed: false,
+      subscriptionEndDate: yesterday,
+    };
+
+    await prisma.user.update({
+      where: { userId },
+      data: updateData,
+    });
+
+    // Handle group admin expiry logic
+    const groupMemberships = await prisma.groupMember.findMany({
+      where: {
+        userId: userId,
+        role: 'admin',
+      },
+      include: {
+        group: {
+          include: {
+            members: {
+              where: {
+                role: 'admin',
+                userId: { not: userId },
+              },
+              include: {
+                user: {
+                  select: {
+                    isSubscribed: true,
+                    subscriptionEndDate: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    const groupsUpdated = [];
+    const rolesChanged = [];
+
+    for (const membership of groupMemberships) {
+      const group = membership.group;
+
+      // Check if there are other admins with active subscriptions
+      const otherActiveAdmins = group.members.filter(m => {
+        if (!m.user) return false;
+        if (!m.user.isSubscribed) return false;
+        if (m.user.subscriptionEndDate && new Date(m.user.subscriptionEndDate) <= new Date()) {
+          return false;
+        }
+        return true;
+      });
+
+      if (otherActiveAdmins.length > 0) {
+        // There are other active admins - change this user's role to adult
+        await prisma.groupMember.update({
+          where: { groupMemberId: membership.groupMemberId },
+          data: { role: 'adult' },
+        });
+        rolesChanged.push({
+          groupId: group.groupId,
+          groupName: group.name,
+          previousRole: 'admin',
+          newRole: 'adult',
+        });
+      } else {
+        // No other active admins - mark group as having no active admin
+        await prisma.group.update({
+          where: { groupId: group.groupId },
+          data: { hasActiveAdmin: false },
+        });
+        groupsUpdated.push({
+          groupId: group.groupId,
+          groupName: group.name,
+          status: 'read-only',
+        });
+      }
+    }
+
+    // Create audit log
+    await createSupportAuditLog({
+      performedById: supportUser.userId,
+      performedByEmail: supportUser.email,
+      targetUserId: targetUser.userId,
+      targetUserEmail: targetUser.email,
+      action: 'expire_subscription',
+      details: `Expired subscription. Groups affected: ${groupsUpdated.length} now read-only, ${rolesChanged.length} role changes.`,
+      previousValue,
+      newValue: JSON.stringify({
+        ...updateData,
+        groupsReadOnly: groupsUpdated,
+        rolesChanged: rolesChanged,
+      }),
+      ipAddress,
+      userAgent,
+    });
+
+    return res.json({
+      success: true,
+      message: 'Subscription expired',
+      subscriptionEndDate: yesterday,
+      groupsAffected: {
+        readOnly: groupsUpdated,
+        roleChanges: rolesChanged,
+      },
+    });
+  } catch (error) {
+    console.error('Error expiring subscription:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to expire subscription',
+    });
+  }
+};
+
+/**
  * GET /support/check-access
  * Check if current user has support access
  */
@@ -566,6 +725,7 @@ module.exports = {
   listUsers,
   updateSubscription,
   updateSubscriptionEndDate,
+  expireSubscription,
   updateSupportAccess,
   updateLockStatus,
   getAuditLogs,

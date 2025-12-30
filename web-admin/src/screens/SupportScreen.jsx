@@ -72,6 +72,10 @@ export default function SupportScreen({ navigation }) {
   const [editingUserId, setEditingUserId] = useState(null);
   const [editingEndDate, setEditingEndDate] = useState('');
 
+  // Expire subscription dialog state
+  const [expireDialogVisible, setExpireDialogVisible] = useState(false);
+  const [userToExpire, setUserToExpire] = useState(null);
+
   useEffect(() => {
     fetchUsers();
   }, [searchQuery, userPage]);
@@ -276,6 +280,39 @@ export default function SupportScreen({ navigation }) {
     }
   }
 
+  function handleExpireClick(user) {
+    setUserToExpire(user);
+    setExpireDialogVisible(true);
+  }
+
+  async function handleExpireConfirm() {
+    if (!userToExpire) return;
+
+    try {
+      setActionLoading(userToExpire.userId);
+      const response = await api.put(`/support/users/${userToExpire.userId}/expire-subscription`);
+      const { groupsAffected } = response.data;
+
+      let message = `Subscription expired for ${userToExpire.email}.`;
+      if (groupsAffected?.readOnly?.length > 0) {
+        message += ` ${groupsAffected.readOnly.length} group(s) now read-only.`;
+      }
+      if (groupsAffected?.roleChanges?.length > 0) {
+        message += ` ${groupsAffected.roleChanges.length} role change(s) to adult.`;
+      }
+
+      setSuccessMessage(message);
+      setExpireDialogVisible(false);
+      setUserToExpire(null);
+      fetchUsers();
+    } catch (err) {
+      console.error('Failed to expire subscription:', err);
+      setUsersError(err.response?.data?.error || 'Failed to expire subscription');
+    } finally {
+      setActionLoading(null);
+    }
+  }
+
   function formatDate(dateString) {
     if (!dateString) return 'N/A';
     return new Date(dateString).toLocaleDateString('en-AU', {
@@ -402,6 +439,7 @@ export default function SupportScreen({ navigation }) {
                       <DataTable.Title style={styles.statusColumn}>Status</DataTable.Title>
                       <DataTable.Title style={styles.subscriptionColumn}>Subscription End Date</DataTable.Title>
                       <DataTable.Title style={styles.supportColumn}>Support</DataTable.Title>
+                      <DataTable.Title style={styles.expireColumn}>Expire</DataTable.Title>
                       <DataTable.Title style={styles.lockColumn}>Lock</DataTable.Title>
                     </DataTable.Header>
 
@@ -513,6 +551,16 @@ export default function SupportScreen({ navigation }) {
                                 disabled={actionLoading === user.userId}
                               />
                             </View>
+                          </DataTable.Cell>
+
+                          <DataTable.Cell style={styles.expireColumn}>
+                            <IconButton
+                              icon="clock-alert-outline"
+                              iconColor={subStatus.status === 'Expired' ? '#999' : '#ff9800'}
+                              size={20}
+                              onPress={() => handleExpireClick(user)}
+                              disabled={actionLoading === user.userId || subStatus.status === 'Expired'}
+                            />
                           </DataTable.Cell>
 
                           <DataTable.Cell style={styles.lockColumn}>
@@ -720,6 +768,38 @@ export default function SupportScreen({ navigation }) {
           </Dialog.Actions>
         </Dialog>
       </Portal>
+
+      {/* Expire Subscription Dialog */}
+      <Portal>
+        <Dialog
+          visible={expireDialogVisible}
+          onDismiss={() => setExpireDialogVisible(false)}
+        >
+          <Dialog.Title>Expire Subscription</Dialog.Title>
+          <Dialog.Content>
+            <Paragraph>
+              Expire subscription for {userToExpire?.email}?
+            </Paragraph>
+            <Paragraph style={styles.dialogWarning}>
+              This will set their subscription end date to yesterday.
+            </Paragraph>
+            <Paragraph style={styles.dialogInfo}>
+              • Groups where they're the only admin will become read-only{'\n'}
+              • In groups with other admins, their role will change to adult
+            </Paragraph>
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button onPress={() => setExpireDialogVisible(false)}>Cancel</Button>
+            <Button
+              onPress={handleExpireConfirm}
+              loading={actionLoading === userToExpire?.userId}
+              textColor="#ff9800"
+            >
+              Expire Subscription
+            </Button>
+          </Dialog.Actions>
+        </Dialog>
+      </Portal>
     </ScrollView>
   );
 }
@@ -813,6 +893,10 @@ const styles = StyleSheet.create({
   },
   supportColumn: {
     flex: 1,
+    justifyContent: 'center',
+  },
+  expireColumn: {
+    flex: 0.5,
     justifyContent: 'center',
   },
   lockColumn: {
@@ -956,6 +1040,12 @@ const styles = StyleSheet.create({
     marginTop: 8,
     color: '#e65100',
     fontSize: 12,
+  },
+  dialogInfo: {
+    marginTop: 12,
+    color: '#666',
+    fontSize: 12,
+    lineHeight: 20,
   },
   lockReasonInput: {
     marginTop: 16,
