@@ -6,7 +6,7 @@
  */
 
 import React, { useState, useEffect, useRef } from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
+import { View, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import {
   Drawer,
   Text,
@@ -14,6 +14,7 @@ import {
   Portal,
   Modal,
 } from 'react-native-paper';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useKindeAuth } from '@kinde-oss/kinde-auth-react';
 import * as SecureStore from 'expo-secure-store';
 import api from '../services/api';
@@ -23,6 +24,7 @@ const DRAWER_WIDTH = 240;
 function AppLayout({ children, navigation, currentRoute }) {
   const { logout } = useKindeAuth();
   const [mobileMenuVisible, setMobileMenuVisible] = useState(false);
+  const [menuCollapsed, setMenuCollapsed] = useState(false);
   const [isSupportUser, setIsSupportUser] = useState(false);
   const supportCheckRef = useRef(false);
 
@@ -77,6 +79,12 @@ function AppLayout({ children, navigation, currentRoute }) {
     <View style={styles.drawerContent}>
       <View style={styles.drawerHeader}>
         <Text style={styles.drawerTitle}>Family Helper</Text>
+        <TouchableOpacity
+          onPress={() => setMenuCollapsed(true)}
+          style={styles.collapseButton}
+        >
+          <MaterialCommunityIcons name="chevron-left" size={24} color="#666" />
+        </TouchableOpacity>
       </View>
       <Divider />
       <ScrollView>
@@ -108,16 +116,42 @@ function AppLayout({ children, navigation, currentRoute }) {
       height: '100vh',
       backgroundColor: '#f5f5f5',
     }}>
-      {/* Desktop Drawer - always visible, fixed position */}
-      <div style={{
-        width: DRAWER_WIDTH,
-        backgroundColor: '#fff',
-        borderRight: '1px solid #e0e0e0',
-        flexShrink: 0,
-        overflow: 'auto',
-      }}>
-        <DrawerContent />
-      </div>
+      {/* Desktop Drawer - collapsible */}
+      {!menuCollapsed && (
+        <div style={{
+          width: DRAWER_WIDTH,
+          backgroundColor: '#fff',
+          borderRight: '1px solid #e0e0e0',
+          flexShrink: 0,
+          overflow: 'auto',
+        }}>
+          <DrawerContent />
+        </div>
+      )}
+
+      {/* Expand button when collapsed */}
+      {menuCollapsed && (
+        <div
+          onClick={() => setMenuCollapsed(false)}
+          style={{
+            position: 'absolute',
+            top: 12,
+            left: 12,
+            zIndex: 100,
+            backgroundColor: '#fff',
+            borderRadius: 20,
+            width: 40,
+            height: 40,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+            cursor: 'pointer',
+          }}
+        >
+          <MaterialCommunityIcons name="chevron-right" size={24} color="#666" />
+        </div>
+      )}
 
       {/* Main Content Area - scrollable */}
       <div style={{
@@ -156,11 +190,17 @@ const styles = StyleSheet.create({
   drawerHeader: {
     padding: 16,
     paddingTop: 24,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   drawerTitle: {
     fontSize: 20,
     fontWeight: 'bold',
     color: '#1976d2',
+  },
+  collapseButton: {
+    padding: 4,
   },
   drawerItem: {
     marginHorizontal: 8,
