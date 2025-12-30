@@ -156,6 +156,11 @@ export default function SupportScreen({ navigation }) {
   }
 
   function getSubscriptionStatus(user) {
+    // If manually expired (endDate in the past), show as Expired
+    if (user.subscriptionEndDate && new Date(user.subscriptionEndDate) < new Date()) {
+      return { status: 'Expired', color: '#d32f2f' };
+    }
+
     // Calculate trial end date (20 days from account creation)
     const trialEndDate = new Date(user.createdAt);
     trialEndDate.setDate(trialEndDate.getDate() + 20);
