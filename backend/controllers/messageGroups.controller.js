@@ -275,7 +275,7 @@ async function createMessageGroup(req, res) {
     // Check if group is in read-only mode (all admins unsubscribed)
     const group = await prisma.group.findUnique({
       where: { groupId: groupId },
-      select: { readOnlyUntil: true },
+      select: { readOnlyUntil: true, hasActiveAdmin: true },
     });
 
     if (isGroupReadOnly(group)) {

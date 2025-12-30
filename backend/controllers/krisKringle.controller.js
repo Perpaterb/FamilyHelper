@@ -5,6 +5,7 @@
  */
 
 const { prisma } = require('../config/database');
+const { isGroupReadOnly, getReadOnlyErrorResponse } = require('../utils/permissions');
 const { emailService } = require('../services/email');
 const emailTemplates = require('../services/email/templates');
 const crypto = require('crypto');
@@ -271,6 +272,16 @@ async function createKrisKringle(req, res) {
       });
     }
 
+    // Check if group is in read-only mode
+    const group = await prisma.group.findUnique({
+      where: { groupId },
+      select: { readOnlyUntil: true, hasActiveAdmin: true },
+    });
+
+    if (isGroupReadOnly(group)) {
+      return res.status(403).json(getReadOnlyErrorResponse(group));
+    }
+
     // Check admin creatable permissions from group settings
     if (membership.role === 'admin') {
       const groupSettings = await prisma.groupSettings.findUnique({
@@ -492,6 +503,16 @@ async function generateKrisKringleMatches(req, res) {
         error: 'Forbidden',
         message: 'You are not a member of this group',
       });
+    }
+
+    // Check if group is in read-only mode
+    const group = await prisma.group.findUnique({
+      where: { groupId },
+      select: { readOnlyUntil: true, hasActiveAdmin: true },
+    });
+
+    if (isGroupReadOnly(group)) {
+      return res.status(403).json(getReadOnlyErrorResponse(group));
     }
 
     // Get Kris Kringle event
@@ -768,6 +789,16 @@ async function deleteKrisKringle(req, res) {
       });
     }
 
+    // Check if group is in read-only mode
+    const group = await prisma.group.findUnique({
+      where: { groupId },
+      select: { readOnlyUntil: true, hasActiveAdmin: true },
+    });
+
+    if (isGroupReadOnly(group)) {
+      return res.status(403).json(getReadOnlyErrorResponse(group));
+    }
+
     // Get Kris Kringle event
     const krisKringle = await prisma.krisKringle.findUnique({
       where: { krisKringleId: krisKringleId },
@@ -1009,6 +1040,16 @@ async function resendParticipantEmail(req, res) {
         error: 'Forbidden',
         message: 'You are not a member of this group',
       });
+    }
+
+    // Check if group is in read-only mode
+    const group = await prisma.group.findUnique({
+      where: { groupId },
+      select: { readOnlyUntil: true, hasActiveAdmin: true },
+    });
+
+    if (isGroupReadOnly(group)) {
+      return res.status(403).json(getReadOnlyErrorResponse(group));
     }
 
     // Get Kris Kringle event
@@ -1297,6 +1338,16 @@ async function updateKrisKringle(req, res) {
       });
     }
 
+    // Check if group is in read-only mode
+    const group = await prisma.group.findUnique({
+      where: { groupId },
+      select: { readOnlyUntil: true, hasActiveAdmin: true },
+    });
+
+    if (isGroupReadOnly(group)) {
+      return res.status(403).json(getReadOnlyErrorResponse(group));
+    }
+
     // Get Kris Kringle event
     const krisKringle = await prisma.krisKringle.findUnique({
       where: { krisKringleId: krisKringleId },
@@ -1392,6 +1443,16 @@ async function addParticipant(req, res) {
         error: 'Forbidden',
         message: 'You are not a member of this group',
       });
+    }
+
+    // Check if group is in read-only mode
+    const group = await prisma.group.findUnique({
+      where: { groupId },
+      select: { readOnlyUntil: true, hasActiveAdmin: true },
+    });
+
+    if (isGroupReadOnly(group)) {
+      return res.status(403).json(getReadOnlyErrorResponse(group));
     }
 
     // Get Kris Kringle event
@@ -1529,6 +1590,16 @@ async function removeParticipant(req, res) {
         error: 'Forbidden',
         message: 'You are not a member of this group',
       });
+    }
+
+    // Check if group is in read-only mode
+    const group = await prisma.group.findUnique({
+      where: { groupId },
+      select: { readOnlyUntil: true, hasActiveAdmin: true },
+    });
+
+    if (isGroupReadOnly(group)) {
+      return res.status(403).json(getReadOnlyErrorResponse(group));
     }
 
     // Get Kris Kringle event

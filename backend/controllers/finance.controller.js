@@ -356,7 +356,7 @@ async function createFinanceMatter(req, res) {
     // Check if group is in read-only mode (all admins unsubscribed)
     const group = await prisma.group.findUnique({
       where: { groupId: groupId },
-      select: { name: true, readOnlyUntil: true },
+      select: { name: true, readOnlyUntil: true, hasActiveAdmin: true },
     });
 
     if (isGroupReadOnly(group)) {

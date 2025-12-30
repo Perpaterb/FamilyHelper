@@ -6,6 +6,7 @@
  */
 
 const { prisma } = require('../config/database');
+const { isGroupReadOnly, getReadOnlyErrorResponse } = require('../utils/permissions');
 const crypto = require('crypto');
 
 /**
@@ -405,6 +406,16 @@ async function createGiftRegistry(req, res) {
       });
     }
 
+    // Check if group is in read-only mode
+    const group = await prisma.group.findUnique({
+      where: { groupId },
+      select: { readOnlyUntil: true, hasActiveAdmin: true },
+    });
+
+    if (isGroupReadOnly(group)) {
+      return res.status(403).json(getReadOnlyErrorResponse(group));
+    }
+
     // Check admin creatable permissions from group settings
     if (membership.role === 'admin') {
       const groupSettings = await prisma.groupSettings.findUnique({
@@ -530,6 +541,16 @@ async function updateGiftRegistry(req, res) {
       });
     }
 
+    // Check if group is in read-only mode
+    const group = await prisma.group.findUnique({
+      where: { groupId },
+      select: { readOnlyUntil: true, hasActiveAdmin: true },
+    });
+
+    if (isGroupReadOnly(group)) {
+      return res.status(403).json(getReadOnlyErrorResponse(group));
+    }
+
     const canEdit = registry.creatorId === membership.groupMemberId || membership.role === 'admin';
 
     if (!canEdit) {
@@ -631,6 +652,16 @@ async function deleteGiftRegistry(req, res) {
         error: 'Access denied',
         message: 'You are not a member of this group',
       });
+    }
+
+    // Check if group is in read-only mode
+    const group = await prisma.group.findUnique({
+      where: { groupId },
+      select: { readOnlyUntil: true, hasActiveAdmin: true },
+    });
+
+    if (isGroupReadOnly(group)) {
+      return res.status(403).json(getReadOnlyErrorResponse(group));
     }
 
     const canDelete = registry.creatorId === membership.groupMemberId || membership.role === 'admin';
@@ -835,6 +866,16 @@ async function addGiftItem(req, res) {
       });
     }
 
+    // Check if group is in read-only mode
+    const group = await prisma.group.findUnique({
+      where: { groupId },
+      select: { readOnlyUntil: true, hasActiveAdmin: true },
+    });
+
+    if (isGroupReadOnly(group)) {
+      return res.status(403).json(getReadOnlyErrorResponse(group));
+    }
+
     const canEdit = registry.creatorId === membership.groupMemberId || membership.role === 'admin';
 
     if (!canEdit) {
@@ -953,6 +994,16 @@ async function updateGiftItem(req, res) {
       });
     }
 
+    // Check if group is in read-only mode
+    const group = await prisma.group.findUnique({
+      where: { groupId },
+      select: { readOnlyUntil: true, hasActiveAdmin: true },
+    });
+
+    if (isGroupReadOnly(group)) {
+      return res.status(403).json(getReadOnlyErrorResponse(group));
+    }
+
     const canEdit = item.registry.creatorId === membership.groupMemberId || membership.role === 'admin';
 
     if (!canEdit) {
@@ -1055,6 +1106,16 @@ async function deleteGiftItem(req, res) {
       });
     }
 
+    // Check if group is in read-only mode
+    const group = await prisma.group.findUnique({
+      where: { groupId },
+      select: { readOnlyUntil: true, hasActiveAdmin: true },
+    });
+
+    if (isGroupReadOnly(group)) {
+      return res.status(403).json(getReadOnlyErrorResponse(group));
+    }
+
     const canDelete = item.registry.creatorId === membership.groupMemberId || membership.role === 'admin';
 
     if (!canDelete) {
@@ -1122,6 +1183,16 @@ async function linkPersonalRegistry(req, res) {
         error: 'Access denied',
         message: 'You are not a member of this group',
       });
+    }
+
+    // Check if group is in read-only mode
+    const group = await prisma.group.findUnique({
+      where: { groupId },
+      select: { readOnlyUntil: true, hasActiveAdmin: true },
+    });
+
+    if (isGroupReadOnly(group)) {
+      return res.status(403).json(getReadOnlyErrorResponse(group));
     }
 
     // Verify personal registry exists and belongs to user
@@ -1218,6 +1289,16 @@ async function unlinkPersonalRegistry(req, res) {
       });
     }
 
+    // Check if group is in read-only mode
+    const group = await prisma.group.findUnique({
+      where: { groupId },
+      select: { readOnlyUntil: true, hasActiveAdmin: true },
+    });
+
+    if (isGroupReadOnly(group)) {
+      return res.status(403).json(getReadOnlyErrorResponse(group));
+    }
+
     // Verify link exists
     const link = await prisma.personalGiftRegistryGroupLink.findFirst({
       where: {
@@ -1303,6 +1384,16 @@ async function markItemAsPurchased(req, res) {
         error: 'Access denied',
         message: 'You are not a member of this group',
       });
+    }
+
+    // Check if group is in read-only mode
+    const group = await prisma.group.findUnique({
+      where: { groupId },
+      select: { readOnlyUntil: true, hasActiveAdmin: true },
+    });
+
+    if (isGroupReadOnly(group)) {
+      return res.status(403).json(getReadOnlyErrorResponse(group));
     }
 
     // Get item with registry

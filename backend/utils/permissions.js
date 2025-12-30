@@ -9,25 +9,36 @@
  * Check if a group is in read-only mode
  *
  * A group is read-only when:
- * - readOnlyUntil is set AND
- * - readOnlyUntil is in the future
+ * - hasActiveAdmin is false (no admin with active subscription), OR
+ * - readOnlyUntil is set AND in the future (legacy 30-day grace period)
  *
- * This happens when all admins have unsubscribed - the group gets 30 days
- * of read-only access before being fully archived.
+ * This happens when all admins have unsubscribed or their subscriptions expired.
  *
  * @param {Object} group - The Group object
+ * @param {boolean} [group.hasActiveAdmin] - Whether group has an active admin
  * @param {Date|null} [group.readOnlyUntil] - The date until which the group is read-only
  * @returns {boolean} True if group is currently in read-only mode
  */
 function isGroupReadOnly(group) {
-  if (!group || !group.readOnlyUntil) {
+  if (!group) {
     return false;
   }
 
-  const readOnlyUntil = new Date(group.readOnlyUntil);
-  const now = new Date();
+  // Check if no active admin (new system)
+  if (group.hasActiveAdmin === false) {
+    return true;
+  }
 
-  return now < readOnlyUntil;
+  // Check legacy readOnlyUntil field
+  if (group.readOnlyUntil) {
+    const readOnlyUntil = new Date(group.readOnlyUntil);
+    const now = new Date();
+    if (now < readOnlyUntil) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 /**
@@ -37,16 +48,35 @@ function isGroupReadOnly(group) {
  * @returns {Object} Error response object with status and message
  */
 function getReadOnlyErrorResponse(group) {
-  const readOnlyUntil = new Date(group.readOnlyUntil);
-  const formattedDate = readOnlyUntil.toLocaleDateString('en-AU', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
+  // Check if it's due to no active admin
+  if (group && group.hasActiveAdmin === false) {
+    return {
+      error: 'Group is read-only',
+      message: 'This group has no active admin with a valid subscription. All modifications are disabled until an admin subscribes.',
+      code: 'GROUP_NO_ACTIVE_ADMIN',
+    };
+  }
+
+  // Legacy readOnlyUntil message
+  if (group && group.readOnlyUntil) {
+    const readOnlyUntil = new Date(group.readOnlyUntil);
+    const formattedDate = readOnlyUntil.toLocaleDateString('en-AU', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+
+    return {
+      error: 'Group is read-only',
+      message: `This group is in read-only mode until ${formattedDate}. No new content can be added. An admin needs to resubscribe to restore full access.`,
+      code: 'GROUP_READ_ONLY_UNTIL',
+    };
+  }
 
   return {
     error: 'Group is read-only',
-    message: `This group is in read-only mode until ${formattedDate}. No new content can be added. An admin needs to resubscribe to restore full access.`,
+    message: 'This group is in read-only mode. No new content can be added.',
+    code: 'GROUP_READ_ONLY',
   };
 }
 

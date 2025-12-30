@@ -6,6 +6,7 @@
  */
 
 const { prisma } = require('../config/database');
+const { isGroupReadOnly, getReadOnlyErrorResponse } = require('../utils/permissions');
 
 /**
  * Get all documents for a group
@@ -201,6 +202,16 @@ async function uploadDocument(req, res) {
         error: 'Forbidden',
         message: 'Supervisors cannot upload documents',
       });
+    }
+
+    // Check if group is in read-only mode
+    const group = await prisma.group.findUnique({
+      where: { groupId },
+      select: { readOnlyUntil: true, hasActiveAdmin: true },
+    });
+
+    if (isGroupReadOnly(group)) {
+      return res.status(403).json(getReadOnlyErrorResponse(group));
     }
 
     // Create the document record
@@ -433,6 +444,16 @@ async function hideDocument(req, res) {
       });
     }
 
+    // Check if group is in read-only mode
+    const group = await prisma.group.findUnique({
+      where: { groupId },
+      select: { readOnlyUntil: true, hasActiveAdmin: true },
+    });
+
+    if (isGroupReadOnly(group)) {
+      return res.status(403).json(getReadOnlyErrorResponse(group));
+    }
+
     // Get the document
     const document = await prisma.groupDocument.findUnique({
       where: {
@@ -536,6 +557,16 @@ async function unhideDocument(req, res) {
       });
     }
 
+    // Check if group is in read-only mode
+    const group = await prisma.group.findUnique({
+      where: { groupId },
+      select: { readOnlyUntil: true, hasActiveAdmin: true },
+    });
+
+    if (isGroupReadOnly(group)) {
+      return res.status(403).json(getReadOnlyErrorResponse(group));
+    }
+
     // Get the document
     const document = await prisma.groupDocument.findUnique({
       where: {
@@ -637,6 +668,16 @@ async function deleteDocument(req, res) {
         error: 'Forbidden',
         message: 'Only admins can delete documents',
       });
+    }
+
+    // Check if group is in read-only mode
+    const group = await prisma.group.findUnique({
+      where: { groupId },
+      select: { readOnlyUntil: true, hasActiveAdmin: true },
+    });
+
+    if (isGroupReadOnly(group)) {
+      return res.status(403).json(getReadOnlyErrorResponse(group));
     }
 
     // Get the document

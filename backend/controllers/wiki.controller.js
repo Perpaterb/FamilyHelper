@@ -5,6 +5,7 @@
  */
 
 const { prisma } = require('../config/database');
+const { isGroupReadOnly, getReadOnlyErrorResponse } = require('../utils/permissions');
 
 /**
  * Get all wiki documents for a group
@@ -328,6 +329,16 @@ async function createWikiDocument(req, res) {
       });
     }
 
+    // Check if group is in read-only mode
+    const group = await prisma.group.findUnique({
+      where: { groupId },
+      select: { readOnlyUntil: true, hasActiveAdmin: true },
+    });
+
+    if (isGroupReadOnly(group)) {
+      return res.status(403).json(getReadOnlyErrorResponse(group));
+    }
+
     // Create document
     const document = await prisma.wikiDocument.create({
       data: {
@@ -441,6 +452,16 @@ async function updateWikiDocument(req, res) {
         error: 'Forbidden',
         message: 'You are not a member of this group',
       });
+    }
+
+    // Check if group is in read-only mode
+    const group = await prisma.group.findUnique({
+      where: { groupId },
+      select: { readOnlyUntil: true, hasActiveAdmin: true },
+    });
+
+    if (isGroupReadOnly(group)) {
+      return res.status(403).json(getReadOnlyErrorResponse(group));
     }
 
     // Check document exists
@@ -573,6 +594,16 @@ async function deleteWikiDocument(req, res) {
         error: 'Forbidden',
         message: 'You are not a member of this group',
       });
+    }
+
+    // Check if group is in read-only mode
+    const group = await prisma.group.findUnique({
+      where: { groupId },
+      select: { readOnlyUntil: true, hasActiveAdmin: true },
+    });
+
+    if (isGroupReadOnly(group)) {
+      return res.status(403).json(getReadOnlyErrorResponse(group));
     }
 
     // Check document exists
