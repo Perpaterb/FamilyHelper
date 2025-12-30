@@ -570,19 +570,29 @@ function calculateDueDate(user) {
     return null;
   }
 
+  // If user has been expired (subscriptionEndDate in the past), use that date
+  if (user.subscriptionEndDate) {
+    const endDate = new Date(user.subscriptionEndDate);
+    if (endDate < new Date()) {
+      return endDate; // Already expired, show the expiry date
+    }
+  }
+
   const now = new Date();
   const candidates = [];
 
   // Add current date as minimum (can't bill for the past)
   candidates.push(now);
 
-  // Add trial end date (20 days from account creation)
-  const trialEnd = new Date(user.createdAt);
-  trialEnd.setDate(trialEnd.getDate() + 20);
-  candidates.push(trialEnd);
+  // Add trial end date (20 days from account creation) - only if not subscribed
+  if (!user.isSubscribed) {
+    const trialEnd = new Date(user.createdAt);
+    trialEnd.setDate(trialEnd.getDate() + 20);
+    candidates.push(trialEnd);
+  }
 
-  // Add renewal date if subscribed and has one
-  if (user.isSubscribed && user.renewalDate) {
+  // Add renewal date if has one
+  if (user.renewalDate) {
     candidates.push(new Date(user.renewalDate));
   }
 
