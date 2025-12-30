@@ -69,6 +69,12 @@ app.use(cors({
   exposedHeaders: ['Content-Range', 'Accept-Ranges', 'Content-Length', 'Content-Type']
 }));
 app.use(cookieParser());
+
+// Stripe webhook needs raw body for signature verification
+// Must be BEFORE express.json() which consumes the body
+app.use('/subscriptions/webhook', express.raw({ type: 'application/json' }));
+
+// JSON parser for all other routes
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

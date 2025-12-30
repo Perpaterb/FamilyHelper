@@ -84,12 +84,12 @@ router.post('/reactivate', requireAuth, subscriptionController.reactivateSubscri
  * POST /subscriptions/webhook
  * Handle Stripe webhook events
  *
- * Note: This endpoint receives raw body for signature verification
+ * Note: Raw body parser is configured in server.js (must be before express.json())
  *
  * Response:
  * - 200: Event processed
  * - 400: Invalid signature or processing error
  */
-router.post('/webhook', express.raw({ type: 'application/json' }), subscriptionController.handleWebhook);
+router.post('/webhook', subscriptionController.handleWebhook);
 
 module.exports = router;
