@@ -13,6 +13,7 @@ import api from '../services/api';
 let RTCPeerConnectionClass;
 let RTCSessionDescriptionClass;
 let RTCIceCandidateClass;
+let MediaStreamClass;
 let mediaDevicesAPI;
 
 if (Platform.OS === 'web') {
@@ -20,6 +21,7 @@ if (Platform.OS === 'web') {
   RTCPeerConnectionClass = typeof RTCPeerConnection !== 'undefined' ? RTCPeerConnection : null;
   RTCSessionDescriptionClass = typeof RTCSessionDescription !== 'undefined' ? RTCSessionDescription : null;
   RTCIceCandidateClass = typeof RTCIceCandidate !== 'undefined' ? RTCIceCandidate : null;
+  MediaStreamClass = typeof MediaStream !== 'undefined' ? MediaStream : null;
   mediaDevicesAPI = typeof navigator !== 'undefined' && navigator.mediaDevices ? navigator.mediaDevices : null;
 } else {
   // Mobile: Use react-native-webrtc
@@ -28,6 +30,7 @@ if (Platform.OS === 'web') {
     RTCPeerConnectionClass = webrtc.RTCPeerConnection;
     RTCSessionDescriptionClass = webrtc.RTCSessionDescription;
     RTCIceCandidateClass = webrtc.RTCIceCandidate;
+    MediaStreamClass = webrtc.MediaStream;
     mediaDevicesAPI = webrtc.mediaDevices;
   } catch (err) {
     console.warn('[WebRTC] react-native-webrtc not available:', err.message);
@@ -535,9 +538,6 @@ export function useWebRTC({ groupId, callId, isActive, isInitiator, audioOnly = 
 
         // Create a new MediaStream with the new video track and existing audio tracks
         const audioTracks = localStream.getAudioTracks();
-        const MediaStreamClass = Platform.OS === 'web'
-          ? MediaStream
-          : require('react-native-webrtc').MediaStream;
         const updatedStream = new MediaStreamClass([...audioTracks, newVideoTrack]);
 
         // Update refs and state
