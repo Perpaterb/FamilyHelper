@@ -307,10 +307,23 @@ async function handleCheckoutSessionCompleted(session) {
       return;
     }
 
-    // Calculate renewal date (1 month from now)
+    // Calculate renewal date (1 month from now + remaining trial days if on trial)
     const now = new Date();
     const renewalDate = new Date(now);
     renewalDate.setMonth(renewalDate.getMonth() + 1);
+
+    // If user is on trial, add remaining trial days to the renewal date
+    if (!user.isSubscribed) {
+      const trialEndDate = new Date(user.createdAt);
+      trialEndDate.setDate(trialEndDate.getDate() + 20);
+
+      if (trialEndDate > now) {
+        // User is still on trial - add remaining days
+        const remainingTrialDays = Math.ceil((trialEndDate - now) / (1000 * 60 * 60 * 24));
+        renewalDate.setDate(renewalDate.getDate() + remainingTrialDays);
+        console.log(`[Webhook] Trial user subscribing - adding ${remainingTrialDays} remaining trial days`);
+      }
+    }
 
     // Get storage packs from metadata
     const storagePacksNeeded = parseInt(session.metadata?.storagePacksNeeded || '0', 10);
