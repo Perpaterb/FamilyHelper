@@ -13,8 +13,12 @@
 
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
+import { Alert } from 'react-native';
 import authEvents from './authEvents';
 import { hasTokenRefresher, refreshToken as refreshFromProvider } from './tokenProvider';
+
+// Error codes that indicate group is in read-only mode
+const READ_ONLY_ERROR_CODES = ['GROUP_NO_ACTIVE_ADMIN', 'GROUP_READ_ONLY_UNTIL', 'GROUP_READ_ONLY'];
 
 // API Base URL - uses environment variable with fallback to localhost
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
@@ -90,6 +94,24 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
+
+    // Handle read-only group errors (403 with specific error codes)
+    if (error.response?.status === 403) {
+      const errorCode = error.response?.data?.code;
+      if (READ_ONLY_ERROR_CODES.includes(errorCode)) {
+        // Show user-friendly alert
+        Alert.alert(
+          'Group is Read-Only',
+          error.response?.data?.message || 'This group is in read-only mode. An admin needs to subscribe to restore full access.',
+          [{ text: 'OK' }]
+        );
+
+        // Mark error as handled so components don't show their own error
+        error.isReadOnlyError = true;
+        error.silent = true;
+        return Promise.reject(error);
+      }
+    }
 
     // If 401 Unauthorized and not already retrying
     if (error.response?.status === 401 && !originalRequest._retry) {

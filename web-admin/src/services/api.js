@@ -11,6 +11,9 @@ import axios from 'axios';
 import config from '../config/env';
 import { hasTokenRefresher, refreshToken as refreshFromProvider } from '../../../mobile-main/src/services/tokenProvider';
 
+// Error codes that indicate group is in read-only mode
+const READ_ONLY_ERROR_CODES = ['GROUP_NO_ACTIVE_ADMIN', 'GROUP_READ_ONLY_UNTIL', 'GROUP_READ_ONLY'];
+
 /**
  * Create axios instance with base configuration
  */
@@ -64,6 +67,22 @@ api.interceptors.response.use(
   },
   async (error) => {
     const originalRequest = error.config;
+
+    // Handle read-only group errors (403 with specific error codes)
+    if (error.response?.status === 403) {
+      const errorCode = error.response?.data?.code;
+      if (READ_ONLY_ERROR_CODES.includes(errorCode)) {
+        // Show user-friendly alert
+        window.alert(
+          error.response?.data?.message || 'This group is in read-only mode. An admin needs to subscribe to restore full access.'
+        );
+
+        // Mark error as handled so components don't show their own error
+        error.isReadOnlyError = true;
+        error.silent = true;
+        return Promise.reject(error);
+      }
+    }
 
     // If 401 error and we haven't already tried to refresh
     if (error.response?.status === 401 && !originalRequest._retry) {

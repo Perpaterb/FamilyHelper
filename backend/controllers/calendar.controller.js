@@ -308,6 +308,14 @@ async function createCalendarEvent(req, res) {
       });
     }
 
+    // Validate at least one attendee
+    if (!attendeeIds || attendeeIds.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'At least one attendee is required',
+      });
+    }
+
     // Validate time range
     const start = new Date(startTime);
     const end = new Date(endTime);
