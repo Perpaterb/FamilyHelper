@@ -272,11 +272,19 @@ export default function SubscriptionScreen({ navigation }) {
   }
 
   /**
-   * Check if subscription was manually expired by support
-   * @returns {boolean} True if manually expired
+   * Check if subscription is expired (manually or endDate in past)
+   * @returns {boolean} True if expired
    */
-  function isManuallyExpired() {
-    return subscription?.subscriptionManuallyExpired === true || subscription?.status === 'manually_expired';
+  function isExpired() {
+    // Check explicit flag
+    if (subscription?.subscriptionManuallyExpired === true || subscription?.status === 'manually_expired') {
+      return true;
+    }
+    // Check if endDate is in the past (and not currently subscribed)
+    if (!subscription?.isSubscribed && subscription?.endDate && new Date(subscription.endDate) < new Date()) {
+      return true;
+    }
+    return false;
   }
 
   if (loading) {
@@ -493,7 +501,7 @@ export default function SubscriptionScreen({ navigation }) {
         )}
 
         {/* Current Subscription Status */}
-        {(subscription?.isSubscribed || isOnFreeTrial() || isManuallyExpired()) && (
+        {(subscription?.isSubscribed || isOnFreeTrial() || isExpired()) && (
           <Card style={styles.statusCard}>
             <Card.Content>
               <Title>Current Subscription</Title>
@@ -505,13 +513,13 @@ export default function SubscriptionScreen({ navigation }) {
                   <Chip
                     style={[
                       styles.statusChip,
-                      isManuallyExpired() ? styles.chipError :
+                      isExpired() ? styles.chipError :
                       isOnFreeTrial() ? styles.chipInfo :
                       styles.chipSuccess
                     ]}
                     textStyle={styles.chipText}
                   >
-                    {isManuallyExpired() ? 'Expired' :
+                    {isExpired() ? 'Expired' :
                      isOnFreeTrial() ? 'Free Trial' :
                      'Active'}
                   </Chip>
@@ -554,7 +562,7 @@ export default function SubscriptionScreen({ navigation }) {
         )}
 
         {/* No Subscription Message */}
-        {!subscription?.isSubscribed && !isOnFreeTrial() && !isManuallyExpired() && !loading && (
+        {!subscription?.isSubscribed && !isOnFreeTrial() && !isExpired() && !loading && (
           <Card style={styles.statusCard}>
             <Card.Content>
               <Title>Current Subscription</Title>
