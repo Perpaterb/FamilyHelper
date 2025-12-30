@@ -395,7 +395,7 @@ export default function GroupDashboardScreen({ navigation, route }) {
       {/* Custom Navigation Header */}
       <CustomNavigationHeader
         title={groupInfo?.name || "Group Dashboard"}
-        onBack={() => navigation.goBack()}
+        onBack={() => navigation.navigate('Groups')}
       />
 
       {loading ? (
