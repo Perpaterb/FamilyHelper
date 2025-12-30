@@ -112,6 +112,7 @@ const listUsers = async (req, res) => {
           isSubscribed: true,
           subscriptionId: true,
           subscriptionEndDate: true,
+          renewalDate: true,
           subscriptionManuallyExpired: true,
           storageLimitGb: true,
           isSupportUser: true,

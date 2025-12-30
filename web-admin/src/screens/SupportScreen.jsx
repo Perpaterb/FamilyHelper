@@ -191,17 +191,27 @@ export default function SupportScreen({ navigation }) {
     trialEndDate.setDate(trialEndDate.getDate() + 20);
     const isOnTrial = !user.isSubscribed && trialEndDate > new Date();
 
-    if (user.isSubscribed && user.subscriptionEndDate) {
-      const endDate = new Date(user.subscriptionEndDate);
-      const now = new Date();
-      const isPermanent = endDate.getFullYear() - now.getFullYear() > 5;
-      if (isPermanent) {
-        return { status: 'Permanent', color: '#4caf50', date: null };
+    if (user.isSubscribed) {
+      // Check if subscription was granted by support (permanent - 100 years)
+      if (user.subscriptionEndDate) {
+        const endDate = new Date(user.subscriptionEndDate);
+        const now = new Date();
+        const isPermanent = endDate.getFullYear() - now.getFullYear() > 5;
+        if (isPermanent) {
+          return { status: 'Permanent', color: '#4caf50', date: null };
+        }
+        // Has end date set = cancelled, will end on that date
+        return {
+          status: 'Cancelling',
+          color: '#ff9800',
+          date: user.subscriptionEndDate,
+        };
       }
+      // Active subscription - show renewal date
       return {
         status: 'Subscribed',
         color: '#2196f3',
-        date: user.subscriptionEndDate,
+        date: user.renewalDate,
       };
     } else if (isOnTrial) {
       return { status: 'Trial', color: '#ff9800', date: trialEndDate.toISOString() };
@@ -442,7 +452,7 @@ export default function SupportScreen({ navigation }) {
                     <DataTable.Header>
                       <DataTable.Title style={styles.userColumn}>User</DataTable.Title>
                       <DataTable.Title style={styles.statusColumn}>Status</DataTable.Title>
-                      <DataTable.Title style={styles.subscriptionColumn}>Subscription End Date</DataTable.Title>
+                      <DataTable.Title style={styles.subscriptionColumn}>Renewal / End Date</DataTable.Title>
                       <DataTable.Title style={styles.supportColumn}>Support</DataTable.Title>
                       <DataTable.Title style={styles.expireColumn}>Expire</DataTable.Title>
                       <DataTable.Title style={styles.lockColumn}>Lock</DataTable.Title>

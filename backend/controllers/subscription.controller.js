@@ -346,6 +346,7 @@ async function handleCheckoutSessionCompleted(session) {
         isSubscribed: true,
         subscriptionStartDate: user.subscriptionStartDate || now,
         subscriptionEndDate: null, // Clear any cancellation
+        subscriptionManuallyExpired: false, // Clear manual expiry flag
         renewalDate: renewalDate,
         additionalStoragePacks: storagePacksNeeded,
         storageLimitGb: storageLimitGb,
@@ -355,6 +356,39 @@ async function handleCheckoutSessionCompleted(session) {
         stripeCustomerId: session.customer || user.stripeCustomerId,
       },
     });
+
+    // Restore read-only groups where this user is admin
+    // Find groups where user is admin and group is in read-only mode
+    const adminMemberships = await prisma.groupMember.findMany({
+      where: {
+        userId: userId,
+        role: 'admin',
+      },
+      include: {
+        group: {
+          select: {
+            groupId: true,
+            name: true,
+            hasActiveAdmin: true,
+          },
+        },
+      },
+    });
+
+    const groupsRestored = [];
+    for (const membership of adminMemberships) {
+      if (!membership.group.hasActiveAdmin) {
+        await prisma.group.update({
+          where: { groupId: membership.group.groupId },
+          data: { hasActiveAdmin: true },
+        });
+        groupsRestored.push(membership.group.name);
+      }
+    }
+
+    if (groupsRestored.length > 0) {
+      console.log(`[Webhook] Restored ${groupsRestored.length} group(s) from read-only: ${groupsRestored.join(', ')}`);
+    }
 
     // Create billing history record
     await prisma.billingHistory.create({
