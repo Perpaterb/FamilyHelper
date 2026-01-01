@@ -160,3 +160,17 @@ docker-compose --profile tools up -d  # Starts pgAdmin
 3. Update any affected code
 4. Test locally
 5. After merge, CI/CD runs `npx prisma migrate deploy` in production
+
+### Release Mobile App Update
+
+When releasing a new mobile app version:
+
+1. Update version in `mobile-main/app.json` and `mobile-main/android/app/build.gradle`
+2. Build the Android package (`.aab`)
+3. Upload to Google Play Console
+4. **Update the website updates page** at https://familyhelperapp.com/updates
+   - Update "Current Version" (e.g., 1.0.87)
+   - Update "Last Updated" date
+   - Add release notes if significant changes
+
+**IMPORTANT:** The /updates page must always reflect the latest released version.
