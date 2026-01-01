@@ -27,12 +27,14 @@ async function getInvitations(req, res) {
 
     // Find all group memberships where:
     // 1. Email matches user's email
-    // 2. EITHER:
+    // 2. Group is not deleted (isHidden = false)
+    // 3. EITHER:
     //    a) isRegistered is false (normal pending invitation), OR
     //    b) isRegistered is true AND userId is null (placeholder created before user registered)
     const pendingInvitations = await prisma.groupMember.findMany({
       where: {
         email: userEmail.toLowerCase(),
+        group: { isHidden: false }, // Exclude deleted groups
         OR: [
           { isRegistered: false }, // Normal invitation
           { isRegistered: true, userId: null }, // Placeholder from before user registered
@@ -95,9 +97,11 @@ async function getInvitationCount(req, res) {
     }
 
     // Count pending invitations (including placeholders created before user registered)
+    // Exclude invitations for deleted groups
     const count = await prisma.groupMember.count({
       where: {
         email: userEmail.toLowerCase(),
+        group: { isHidden: false }, // Exclude deleted groups
         OR: [
           { isRegistered: false }, // Normal invitation
           { isRegistered: true, userId: null }, // Placeholder from before user registered
