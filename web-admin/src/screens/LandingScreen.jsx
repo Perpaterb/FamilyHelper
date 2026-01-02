@@ -372,21 +372,16 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.3)',
-    minWidth: 280,
     height: 56,
   },
   storeButtonIcon: {
-    width: 24,
     marginRight: 12,
   },
   storeButtonTextContainer: {
-    flex: 1,
     justifyContent: 'center',
   },
   storeButtonTextContainerCentered: {
-    flex: 1,
     justifyContent: 'center',
-    alignItems: 'flex-start',
   },
   storeButtonSmallText: {
     color: '#fff',
