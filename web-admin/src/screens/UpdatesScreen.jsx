@@ -20,8 +20,8 @@ import {
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 export default function UpdatesScreen({ navigation }) {
-  const APP_VERSION = '1.0.78';
-  const LAST_UPDATED = 'December 27, 2024';
+  const APP_VERSION = '1.0.87';
+  const LAST_UPDATED = 'January 2, 2025';
 
   const comingSoon = [
     {
@@ -48,6 +48,11 @@ export default function UpdatesScreen({ navigation }) {
   ];
 
   const recentFixes = [
+    {
+      date: 'Jan 2, 2025',
+      title: 'Auto-Approve Settings & Approvals Display',
+      description: 'Fixed profile photos and display names not showing correctly in Auto-Approve Settings and Approvals screens. Added auto-approval support for recording settings changes.',
+    },
     {
       date: 'Dec 27, 2024',
       title: 'App Icon Badge Notifications',
