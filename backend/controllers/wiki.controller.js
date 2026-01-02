@@ -2,10 +2,26 @@
  * Wiki Controller
  *
  * Handles wiki document CRUD operations within groups.
+ * All wiki content (title and content) is encrypted at rest using AES-256-GCM.
  */
 
 const { prisma } = require('../config/database');
 const { isGroupReadOnly, getReadOnlyErrorResponse } = require('../utils/permissions');
+const encryptionService = require('../services/encryption.service');
+
+/**
+ * Safely decrypt wiki content
+ * Falls back to original content if decryption fails (for unencrypted legacy data)
+ */
+function safeDecrypt(encryptedText) {
+  if (!encryptedText) return encryptedText;
+  try {
+    return encryptionService.decrypt(encryptedText);
+  } catch (error) {
+    // If decryption fails, assume it's unencrypted legacy content
+    return encryptedText;
+  }
+}
 
 /**
  * Get all wiki documents for a group
@@ -79,23 +95,12 @@ async function getWikiDocuments(req, res) {
       });
     }
 
-    // Build where clause
-    const whereClause = {
-      groupId,
-      isHidden: false,
-    };
-
-    // Add search filter if provided
-    if (search) {
-      whereClause.OR = [
-        { title: { contains: search, mode: 'insensitive' } },
-        { content: { contains: search, mode: 'insensitive' } },
-      ];
-    }
-
-    // Fetch documents
+    // Fetch all documents (encrypted content can't be searched in database)
     const documents = await prisma.wikiDocument.findMany({
-      where: whereClause,
+      where: {
+        groupId,
+        isHidden: false,
+      },
       include: {
         creator: {
           select: {
@@ -117,11 +122,11 @@ async function getWikiDocuments(req, res) {
       orderBy: { updatedAt: 'desc' },
     });
 
-    // Merge user profile data with group member data
-    const formattedDocuments = documents.map(doc => ({
+    // Merge user profile data with group member data and decrypt content
+    let formattedDocuments = documents.map(doc => ({
       documentId: doc.documentId,
-      title: doc.title,
-      content: doc.content,
+      title: safeDecrypt(doc.title),
+      content: safeDecrypt(doc.content),
       createdAt: doc.createdAt,
       updatedAt: doc.updatedAt,
       creator: {
@@ -134,6 +139,15 @@ async function getWikiDocuments(req, res) {
           : null,
       },
     }));
+
+    // Filter in memory if search is provided (can't search encrypted content in DB)
+    if (search) {
+      const searchTerm = search.toLowerCase();
+      formattedDocuments = formattedDocuments.filter(doc =>
+        doc.title.toLowerCase().includes(searchTerm) ||
+        doc.content.toLowerCase().includes(searchTerm)
+      );
+    }
 
     res.status(200).json({
       success: true,
@@ -239,11 +253,11 @@ async function getWikiDocument(req, res) {
       });
     }
 
-    // Format response
+    // Format response with decrypted content
     const formattedDocument = {
       documentId: document.documentId,
-      title: document.title,
-      content: document.content,
+      title: safeDecrypt(document.title),
+      content: safeDecrypt(document.content),
       createdAt: document.createdAt,
       updatedAt: document.updatedAt,
       creator: {
@@ -257,7 +271,7 @@ async function getWikiDocument(req, res) {
       },
       revisions: document.revisions.map(rev => ({
         revisionId: rev.revisionId,
-        title: rev.title,
+        title: safeDecrypt(rev.title),
         editedAt: rev.editedAt,
         changeNote: rev.changeNote,
         editor: {
@@ -339,12 +353,16 @@ async function createWikiDocument(req, res) {
       return res.status(403).json(getReadOnlyErrorResponse(group));
     }
 
-    // Create document
+    // Encrypt title and content
+    const encryptedTitle = encryptionService.encrypt(title.trim());
+    const encryptedContent = encryptionService.encrypt(content || '');
+
+    // Create document with encrypted content
     const document = await prisma.wikiDocument.create({
       data: {
         groupId,
-        title: title.trim(),
-        content: content || '',
+        title: encryptedTitle,
+        content: encryptedContent,
         createdBy: membership.groupMemberId,
       },
       include: {
@@ -382,8 +400,8 @@ async function createWikiDocument(req, res) {
 
     const formattedDocument = {
       documentId: document.documentId,
-      title: document.title,
-      content: document.content,
+      title: safeDecrypt(document.title),
+      content: safeDecrypt(document.content),
       createdAt: document.createdAt,
       updatedAt: document.updatedAt,
       creator: {
@@ -491,12 +509,16 @@ async function updateWikiDocument(req, res) {
       },
     });
 
+    // Encrypt new title and content
+    const encryptedTitle = encryptionService.encrypt(title.trim());
+    const encryptedContent = encryptionService.encrypt(content || '');
+
     // Update document
     const document = await prisma.wikiDocument.update({
       where: { documentId },
       data: {
-        title: title.trim(),
-        content: content || '',
+        title: encryptedTitle,
+        content: encryptedContent,
       },
       include: {
         creator: {
@@ -533,8 +555,8 @@ async function updateWikiDocument(req, res) {
 
     const formattedDocument = {
       documentId: document.documentId,
-      title: document.title,
-      content: document.content,
+      title: safeDecrypt(document.title),
+      content: safeDecrypt(document.content),
       createdAt: document.createdAt,
       updatedAt: document.updatedAt,
       creator: {
@@ -639,7 +661,7 @@ async function deleteWikiDocument(req, res) {
       data: { isHidden: true },
     });
 
-    // Create audit log
+    // Create audit log with decrypted title
     await prisma.auditLog.create({
       data: {
         groupId,
@@ -648,7 +670,7 @@ async function deleteWikiDocument(req, res) {
         performedByName: membership.displayName,
         performedByEmail: membership.email || 'N/A',
         actionLocation: 'wiki',
-        messageContent: `Deleted wiki document: ${document.title}`,
+        messageContent: `Deleted wiki document: ${safeDecrypt(document.title)}`,
       },
     });
 
@@ -708,15 +730,11 @@ async function searchWikiDocuments(req, res) {
       });
     }
 
-    // Search in title and content
+    // Fetch all documents (encrypted content can't be searched in database)
     const documents = await prisma.wikiDocument.findMany({
       where: {
         groupId,
         isHidden: false,
-        OR: [
-          { title: { contains: q, mode: 'insensitive' } },
-          { content: { contains: q, mode: 'insensitive' } },
-        ],
       },
       include: {
         creator: {
@@ -739,22 +757,29 @@ async function searchWikiDocuments(req, res) {
       orderBy: { updatedAt: 'desc' },
     });
 
-    const formattedDocuments = documents.map(doc => ({
-      documentId: doc.documentId,
-      title: doc.title,
-      content: doc.content,
-      createdAt: doc.createdAt,
-      updatedAt: doc.updatedAt,
-      creator: {
-        groupMemberId: doc.creator.groupMemberId,
-        displayName: doc.creator.user?.displayName || doc.creator.displayName,
-        iconLetters: doc.creator.user?.memberIcon || doc.creator.iconLetters,
-        iconColor: doc.creator.user?.iconColor || doc.creator.iconColor,
-        profilePhotoUrl: doc.creator.user?.profilePhotoFileId
-          ? `${process.env.API_BASE_URL || 'http://localhost:3000'}/files/${doc.creator.user.profilePhotoFileId}`
-          : null,
-      },
-    }));
+    // Decrypt and filter in memory
+    const searchTerm = q.toLowerCase();
+    const formattedDocuments = documents
+      .map(doc => ({
+        documentId: doc.documentId,
+        title: safeDecrypt(doc.title),
+        content: safeDecrypt(doc.content),
+        createdAt: doc.createdAt,
+        updatedAt: doc.updatedAt,
+        creator: {
+          groupMemberId: doc.creator.groupMemberId,
+          displayName: doc.creator.user?.displayName || doc.creator.displayName,
+          iconLetters: doc.creator.user?.memberIcon || doc.creator.iconLetters,
+          iconColor: doc.creator.user?.iconColor || doc.creator.iconColor,
+          profilePhotoUrl: doc.creator.user?.profilePhotoFileId
+            ? `${process.env.API_BASE_URL || 'http://localhost:3000'}/files/${doc.creator.user.profilePhotoFileId}`
+            : null,
+        },
+      }))
+      .filter(doc =>
+        doc.title.toLowerCase().includes(searchTerm) ||
+        doc.content.toLowerCase().includes(searchTerm)
+      );
 
     res.status(200).json({
       success: true,
