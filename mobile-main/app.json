@@ -2,7 +2,7 @@
   "expo": {
     "name": "Family Helper",
     "slug": "family-helper",
-    "version": "1.0.90",
+    "version": "1.0.91",
     "scheme": "familyhelper",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -16,17 +16,17 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.familyhelper.app",
-      "buildNumber": "36"
+      "buildNumber": "37"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true,
+      "edgeToEdgeEnabled": false,
       "package": "com.familyhelper.app",
       "googleServicesFile": "./google-services.json",
-      "versionCode": 36
+      "versionCode": 37
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -40,7 +40,7 @@
           "color": "#6200ee"
         }
       ],
-      "react-native-edge-to-edge"
+      "./plugins/withDisableEdgeToEdge.js"
     ],
     "extra": {
       "eas": {

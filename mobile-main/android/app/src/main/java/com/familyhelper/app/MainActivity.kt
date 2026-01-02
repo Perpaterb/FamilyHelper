@@ -9,6 +9,9 @@ import com.facebook.react.defaults.DefaultNewArchitectureEntryPoint.fabricEnable
 import com.facebook.react.defaults.DefaultReactActivityDelegate
 
 import expo.modules.ReactActivityDelegateWrapper
+import android.graphics.Color
+import android.view.View
+import androidx.core.view.WindowCompat
 
 class MainActivity : ReactActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
@@ -17,6 +20,17 @@ class MainActivity : ReactActivity() {
     // This is required for expo-splash-screen.
     setTheme(R.style.AppTheme);
     super.onCreate(null)
+    // Disable edge-to-edge mode - ensure content doesn't go behind navigation bar
+    WindowCompat.setDecorFitsSystemWindows(window, true)
+
+    // Set navigation bar color to white
+    window.navigationBarColor = Color.WHITE
+
+    // Set light navigation bar icons (dark icons on light background)
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+      window.decorView.systemUiVisibility = window.decorView.systemUiVisibility or
+        View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
+    }
   }
 
   /**
