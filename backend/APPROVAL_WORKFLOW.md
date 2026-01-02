@@ -148,24 +148,29 @@ Every action in the system follows this exact sequence:
 ### Step 4b: Check Admin Approval Requirement
 **Question**: Does this action require admin approval?
 
-**Actions that DON'T require admin approval** (if settings allow):
-- Creating message groups (if role has permission)
+**Actions that DON'T require admin approval**:
+- Creating message groups (if role has permission per group settings)
 - Sending messages
 - Reading messages
 - Deleting own messages (if setting allows)
-- Creating calendar events (if role has permission)
+- Creating calendar events (per group settings - anyone with access can create)
+- Assigning children to calendar events (per group settings)
+- Assigning caregivers to calendar events (per group settings)
 - Viewing group information
+- Hiding messages (any admin can do without approval)
 
-**Actions that DO require admin approval**:
-- Hiding messages (admin only, but checked here for completeness)
+**Actions that DO require admin approval (>50%)**:
 - Adding members
 - Removing members
-- Changing roles (to/from admin especially)
-- Assigning relationships
-- Changing relationships
-- Changing group settings
+- Changing role FROM admin (demoting)
+- Changing group settings (including call recording settings)
 - Deleting group
-- Changing message group settings (e.g., deletion permission)
+- Deleting files (from storage)
+- Deleting call recordings
+- Deleting log exports
+
+**Actions that require 100% admin approval**:
+- Changing role TO admin (promoting)
 
 **Outcomes**:
 - **NO** → Go to Step 5a (Execute immediately)
@@ -338,19 +343,23 @@ if (requiresAllAdmins) {
 
 | Action Type | Threshold | `requiresAllAdmins` | Notes |
 |-------------|-----------|---------------------|-------|
-| Hide messages | >50% | false | Admin-only action |
 | Add members | >50% | false | - |
 | Remove members | >50% | false | - |
-| Change role TO admin | 100% | true | Adding new admin requires unanimous consent |
-| Change role FROM admin | >50% | false | Removing admin requires majority |
-| Assign relationships | >50% | false | - |
-| Change relationships | >50% | false | - |
-| Create calendar events | >50% | false | If admin approval required |
-| Assign children to events | >50% | false | - |
-| Assign caregivers to events | >50% | false | - |
-| Change message deletion setting | >50% | false | New action type |
+| Change role TO admin | 100% | true | Promoting requires unanimous consent |
+| Change role FROM admin | >50% | false | Demoting requires majority |
+| Change group settings | >50% | false | Including call recording settings |
 | Delete group | >50% | false | - |
-| Change group settings | >50% | false | - |
+| Delete files | >50% | false | From storage management |
+| Delete call recordings | >50% | false | - |
+| Delete log exports | >50% | false | - |
+
+**Actions that do NOT require approval:**
+| Action | Notes |
+|--------|-------|
+| Hide messages | Any admin can do |
+| Calendar events | Per group settings - anyone with access |
+| Assign children to events | Per group settings |
+| Assign caregivers to events | Per group settings |
 
 ---
 
@@ -374,22 +383,20 @@ if (requiresAllAdmins) {
 
 ## Auto-Approval Permission Mappings
 
-The `AdminPermission` table stores pre-approval settings:
+The `AutoApprovePermission` table stores pre-approval settings between admins.
+Each admin can grant permissions to other admins for their actions to be auto-approved.
 
-| Permission Field | Applies To Action Types |
-|------------------|------------------------|
-| `autoApproveHideMessages` | Hide messages |
-| `autoApproveChangeMessageDeletionSetting` | Change message group deletion setting |
-| `autoApproveAddPeople` | Add members |
-| `autoApproveRemovePeople` | Remove members |
-| `autoApproveChangeRoles` | Change role (non-admin changes) |
-| `autoApproveAssignRelationships` | Assign relationships |
-| `autoApproveChangeRelationships` | Change relationships |
-| `autoApproveCalendarEntries` | Create calendar events |
-| `autoApproveAssignChildrenToEvents` | Assign children to events |
-| `autoApproveAssignCaregiversToEvents` | Assign caregivers to events |
+| Permission Field | Applies To Action Types | Notes |
+|------------------|------------------------|-------|
+| `canAddMembers` | Add members | >50% approval |
+| `canRemoveMembers` | Remove members | >50% approval |
+| `canChangeRoles` | Demote from admin | >50% approval |
+| `canChangeGroupSettings` | Change group settings | >50% approval (including recording settings) |
 
-**Note**: `autoApproveAssignRoles` exists in the schema but is NOT used in the UI (removed as redundant with adding members).
+**Notes:**
+- Promoting to admin (`change_role_to_admin`) always requires 100% approval - cannot be auto-approved
+- Actions like hide messages, calendar events, etc. don't require approval at all
+- Legacy fields in schema (`canHideMessages`, `canAssignRelationships`, `canChangeRelationships`, `canCreateCalendarEvents`, `canAssignChildrenToEvents`, `canAssignCaregiversToEvents`) are deprecated - these actions don't require approval
 
 ---
 

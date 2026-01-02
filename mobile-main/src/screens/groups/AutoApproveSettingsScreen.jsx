@@ -174,6 +174,12 @@ export default function AutoApproveSettingsScreen({ navigation, route }) {
           <Text style={styles.sectionTitle}>Role Changes</Text>
           {renderPermissionToggle(admin, 'canChangeRoles', 'Demote from Admin')}
           {renderDisabledPermission('Promote to Admin', 'Always requires 100% admin approval')}
+
+          <Divider style={styles.divider} />
+
+          <Text style={styles.sectionTitle}>Group Settings</Text>
+          {renderPermissionToggle(admin, 'canChangeGroupSettings', 'Change Group Settings')}
+          <Text style={styles.settingsNote}>Includes call recording settings and other group configurations</Text>
         </Card.Content>
       </Card>
     );
@@ -333,6 +339,13 @@ const styles = StyleSheet.create({
     color: '#bbb',
     fontStyle: 'italic',
     marginTop: 2,
+  },
+  settingsNote: {
+    fontSize: 12,
+    color: '#666',
+    fontStyle: 'italic',
+    marginTop: 4,
+    paddingLeft: 4,
   },
   emptyState: {
     flex: 1,

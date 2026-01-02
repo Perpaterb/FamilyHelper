@@ -1391,7 +1391,7 @@ async function inviteMember(req, res) {
 
       res.status(202).json({
         success: true,
-        message: `Approval request created to add ${email} to the group. Waiting for other admin approvals.`,
+        message: `Adding ${email} requires >50% admin approval. If you are the only admin or have been auto-approved by other admins, this will complete immediately.`,
         requiresApproval: true,
         approvalId: approval.approvalId,
       });
@@ -1665,7 +1665,7 @@ async function deleteGroup(req, res) {
         success: true,
         requiresApproval: true,
         approvalId: approval.approvalId,
-        message: 'Approval request created. Other admins must approve group deletion.',
+        message: 'Deleting this group requires >50% admin approval. If you are the only admin or have been auto-approved by other admins, this will complete immediately.',
       });
     }
 
@@ -2484,7 +2484,7 @@ async function changeMemberRole(req, res) {
           success: true,
           requiresApproval: true,
           approvalId: approval.approvalId,
-          message: 'Approval request created. Other admins must approve this role change.',
+          message: 'Promoting to admin requires 100% admin approval. All other admins must approve this action.',
         });
       }
     }
@@ -2667,7 +2667,7 @@ async function changeMemberRole(req, res) {
           success: true,
           requiresApproval: true,
           approvalId: approval.approvalId,
-          message: 'Approval request created. Other admins must approve this role change.',
+          message: 'Demoting this admin requires >50% admin approval. If you are the only admin or have been auto-approved by other admins, this will complete immediately.',
         });
       }
     }
@@ -3040,7 +3040,7 @@ async function removeMember(req, res) {
           success: true,
           requiresApproval: true,
           approvalId: approval.approvalId,
-          message: 'Approval request created. Other admins must approve removing this admin.',
+          message: 'Removing this admin requires >50% admin approval. If you are the only admin or have been auto-approved by other admins, this will complete immediately.',
         });
       }
     }
@@ -3457,7 +3457,7 @@ async function updateGroupSettings(req, res) {
     // Build response message
     let responseMessage = 'Group settings updated successfully';
     if (recordingApprovalCreated) {
-      responseMessage = 'Settings updated. Recording setting changes require approval from other admins (>50% vote required).';
+      responseMessage = 'Other settings updated. Recording setting changes require >50% admin approval. If you are the only admin or have been auto-approved by other admins, this will complete immediately.';
     }
 
     res.status(200).json({
@@ -3548,17 +3548,10 @@ async function getAdminPermissions(req, res) {
       return {
         ...admin,
         permissions: {
-          canHideMessages: adminPermission?.autoApproveHideMessages || false,
-          canChangeMessageDeletionSetting: adminPermission?.autoApproveChangeMessageDeletionSetting || false,
           canAddMembers: adminPermission?.autoApproveAddPeople || false,
           canRemoveMembers: adminPermission?.autoApproveRemovePeople || false,
-          canAssignRoles: adminPermission?.autoApproveAssignRoles || false,
           canChangeRoles: adminPermission?.autoApproveChangeRoles || false,
-          canAssignRelationships: adminPermission?.autoApproveAssignRelationships || false,
-          canChangeRelationships: adminPermission?.autoApproveChangeRelationships || false,
-          canCreateCalendarEvents: adminPermission?.autoApproveCalendarEntries || false,
-          canAssignChildrenToEvents: adminPermission?.autoApproveAssignChildrenToEvents || false,
-          canAssignCaregiversToEvents: adminPermission?.autoApproveAssignCaregiversToEvents || false,
+          canChangeGroupSettings: adminPermission?.autoApproveChangeGroupSettings || false,
         },
       };
     });
@@ -3587,17 +3580,10 @@ async function updateAdminPermissions(req, res) {
 
     // Map frontend field names to database field names
     const permissions = req.body;
-    const autoApproveHideMessages = permissions.canHideMessages ?? permissions.autoApproveHideMessages;
-    const autoApproveChangeMessageDeletionSetting = permissions.canChangeMessageDeletionSetting ?? permissions.autoApproveChangeMessageDeletionSetting;
-    const autoApproveAddPeople = permissions.canAddMembers ?? permissions.autoApproveAddPeople;
-    const autoApproveRemovePeople = permissions.canRemoveMembers ?? permissions.autoApproveRemovePeople;
-    const autoApproveAssignRoles = permissions.canAssignRoles ?? permissions.autoApproveAssignRoles;
-    const autoApproveChangeRoles = permissions.canChangeRoles ?? permissions.autoApproveChangeRoles;
-    const autoApproveAssignRelationships = permissions.canAssignRelationships ?? permissions.autoApproveAssignRelationships;
-    const autoApproveChangeRelationships = permissions.canChangeRelationships ?? permissions.autoApproveChangeRelationships;
-    const autoApproveCalendarEntries = permissions.canCreateCalendarEvents ?? permissions.autoApproveCalendarEntries;
-    const autoApproveAssignChildrenToEvents = permissions.canAssignChildrenToEvents ?? permissions.autoApproveAssignChildrenToEvents;
-    const autoApproveAssignCaregiversToEvents = permissions.canAssignCaregiversToEvents ?? permissions.autoApproveAssignCaregiversToEvents;
+    const autoApproveAddPeople = permissions.canAddMembers ?? false;
+    const autoApproveRemovePeople = permissions.canRemoveMembers ?? false;
+    const autoApproveChangeRoles = permissions.canChangeRoles ?? false;
+    const autoApproveChangeGroupSettings = permissions.canChangeGroupSettings ?? false;
 
     // Verify current user is an admin
     const grantingAdmin = await prisma.groupMember.findFirst({
@@ -3649,33 +3635,19 @@ async function updateAdminPermissions(req, res) {
         },
       },
       update: {
-        autoApproveHideMessages,
-        autoApproveChangeMessageDeletionSetting,
         autoApproveAddPeople,
         autoApproveRemovePeople,
-        autoApproveAssignRoles,
         autoApproveChangeRoles,
-        autoApproveAssignRelationships,
-        autoApproveChangeRelationships,
-        autoApproveCalendarEntries,
-        autoApproveAssignChildrenToEvents,
-        autoApproveAssignCaregiversToEvents,
+        autoApproveChangeGroupSettings,
       },
       create: {
         groupId: groupId,
         grantingAdminId: grantingAdmin.groupMemberId,
         receivingAdminId: targetAdminId,
-        autoApproveHideMessages,
-        autoApproveChangeMessageDeletionSetting,
         autoApproveAddPeople,
         autoApproveRemovePeople,
-        autoApproveAssignRoles,
         autoApproveChangeRoles,
-        autoApproveAssignRelationships,
-        autoApproveChangeRelationships,
-        autoApproveCalendarEntries,
-        autoApproveAssignChildrenToEvents,
-        autoApproveAssignCaregiversToEvents,
+        autoApproveChangeGroupSettings,
       },
     });
 

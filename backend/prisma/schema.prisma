@@ -9,23 +9,23 @@ datasource db {
 }
 
 model User {
-  userId                String    @id @default(uuid()) @map("user_id") @db.Uuid
-  email                 String    @unique @db.VarChar(255)
-  kindeId               String    @unique @map("kinde_id") @db.VarChar(255)
-  createdAt             DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
-  updatedAt             DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+  userId                      String    @id @default(uuid()) @map("user_id") @db.Uuid
+  email                       String    @unique @db.VarChar(255)
+  kindeId                     String    @unique @map("kinde_id") @db.VarChar(255)
+  createdAt                   DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt                   DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
   isSubscribed                Boolean   @default(false) @map("is_subscribed")
   subscriptionId              String?   @map("subscription_id") @db.VarChar(255)
   subscriptionStartDate       DateTime? @map("subscription_start_date") @db.Timestamp(6)
   subscriptionEndDate         DateTime? @map("subscription_end_date") @db.Timestamp(6)
   subscriptionManuallyExpired Boolean   @default(false) @map("subscription_manually_expired")
-  storageLimitGb        Int       @default(0) @map("storage_limit_gb")
-  storageUsedBytes      BigInt    @default(0) @map("storage_used_bytes")
-  lastLogin             DateTime? @map("last_login") @db.Timestamp(6)
-  displayName           String?   @map("display_name") @db.VarChar(255)
-  memberIcon            String?   @map("member_icon") @db.VarChar(10)
-  iconColor             String?   @map("icon_color") @db.VarChar(7)
-  profilePhotoFileId    String?   @map("profile_photo_file_id") @db.Uuid
+  storageLimitGb              Int       @default(0) @map("storage_limit_gb")
+  storageUsedBytes            BigInt    @default(0) @map("storage_used_bytes")
+  lastLogin                   DateTime? @map("last_login") @db.Timestamp(6)
+  displayName                 String?   @map("display_name") @db.VarChar(255)
+  memberIcon                  String?   @map("member_icon") @db.VarChar(10)
+  iconColor                   String?   @map("icon_color") @db.VarChar(7)
+  profilePhotoFileId          String?   @map("profile_photo_file_id") @db.Uuid
 
   // Support and account status flags
   isSupportUser Boolean   @default(false) @map("is_support_user")
@@ -367,6 +367,7 @@ model AdminPermission {
   autoApproveAssignChildrenToEvents       Boolean     @default(false) @map("auto_approve_assign_children_to_events")
   autoApproveAssignCaregiversToEvents     Boolean     @default(false) @map("auto_approve_assign_caregivers_to_events")
   autoApproveChangeMessageDeletionSetting Boolean     @default(false) @map("auto_approve_change_message_deletion_setting")
+  autoApproveChangeGroupSettings          Boolean     @default(false) @map("auto_approve_change_group_settings")
   createdAt                               DateTime    @default(now()) @map("created_at") @db.Timestamp(6)
   updatedAt                               DateTime    @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
   grantingAdmin                           GroupMember @relation("GrantingAdmin", fields: [grantingAdminId], references: [groupMemberId])
