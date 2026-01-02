@@ -2,9 +2,6 @@ package com.familyhelper.app
 
 import android.os.Build
 import android.os.Bundle
-import android.view.View
-import android.graphics.Color
-import androidx.core.view.WindowCompat
 
 import com.facebook.react.ReactActivity
 import com.facebook.react.ReactActivityDelegate
@@ -20,18 +17,6 @@ class MainActivity : ReactActivity() {
     // This is required for expo-splash-screen.
     setTheme(R.style.AppTheme);
     super.onCreate(null)
-
-    // Disable edge-to-edge mode - ensure content doesn't go behind navigation bar
-    WindowCompat.setDecorFitsSystemWindows(window, true)
-
-    // Set navigation bar color to white
-    window.navigationBarColor = Color.WHITE
-
-    // Set light navigation bar icons (dark icons on light background)
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-      window.decorView.systemUiVisibility = window.decorView.systemUiVisibility or
-        View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
-    }
   }
 
   /**
