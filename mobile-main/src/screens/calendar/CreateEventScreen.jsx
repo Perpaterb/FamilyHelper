@@ -10,6 +10,7 @@ import { CustomAlert } from '../../components/CustomAlert';
 import API from '../../services/api';
 import CustomNavigationHeader from '../../components/CustomNavigationHeader';
 import DateTimeSelector, { formatDateByType } from '../../components/DateTimeSelector';
+import UserAvatar from '../../components/shared/UserAvatar';
 
 /**
  * CreateEventScreen component
@@ -264,16 +265,14 @@ export default function CreateEventScreen({ navigation, route }) {
                 .filter(m => selectedMemberIds.includes(m.groupMemberId))
                 .map(member => (
                   <View key={member.groupMemberId} style={styles.memberChip}>
-                    <View
-                      style={[
-                        styles.memberChipIcon,
-                        { backgroundColor: member.iconColor },
-                      ]}
-                    >
-                      <Text style={styles.memberChipIconText}>
-                        {member.iconLetters}
-                      </Text>
-                    </View>
+                    <UserAvatar
+                      profilePhotoUrl={member.profilePhotoUrl}
+                      memberIcon={member.iconLetters}
+                      iconColor={member.iconColor}
+                      displayName={member.displayName}
+                      size={24}
+                      style={styles.memberChipIcon}
+                    />
                     <Text style={styles.memberChipText}>{member.displayName}</Text>
                     <TouchableOpacity
                       onPress={() => toggleMemberSelection(member.groupMemberId)}
@@ -418,16 +417,14 @@ export default function CreateEventScreen({ navigation, route }) {
                     onPress={() => toggleMemberSelection(member.groupMemberId)}
                   >
                     <View style={styles.memberItemLeft}>
-                      <View
-                        style={[
-                          styles.memberIcon,
-                          { backgroundColor: member.iconColor },
-                        ]}
-                      >
-                        <Text style={styles.memberIconText}>
-                          {member.iconLetters}
-                        </Text>
-                      </View>
+                      <UserAvatar
+                        profilePhotoUrl={member.profilePhotoUrl}
+                        memberIcon={member.iconLetters}
+                        iconColor={member.iconColor}
+                        displayName={member.displayName}
+                        size={40}
+                        style={styles.memberIcon}
+                      />
                       <View>
                         <Text style={styles.memberName}>{member.displayName}</Text>
                         <Text style={styles.memberRole}>{member.role}</Text>

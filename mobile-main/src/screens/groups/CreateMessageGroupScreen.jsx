@@ -21,6 +21,7 @@ import {
 import api from '../../services/api';
 import { getContrastTextColor } from '../../utils/colorUtils';
 import CustomNavigationHeader from '../../components/CustomNavigationHeader';
+import UserAvatar from '../../components/shared/UserAvatar';
 
 /**
  * @typedef {Object} CreateMessageGroupScreenProps
@@ -243,11 +244,13 @@ export default function CreateMessageGroupScreen({ navigation, route }) {
                     disabled={true}
                   />
                 </View>
-                <Avatar.Text
+                <UserAvatar
+                  profilePhotoUrl={member.profilePhotoUrl}
+                  memberIcon={member.iconLetters}
+                  iconColor={member.iconColor || '#6200ee'}
+                  displayName={member.displayName}
                   size={40}
-                  label={member.iconLetters || member.displayName?.[0] || '?'}
-                  style={[styles.avatar, { backgroundColor: member.iconColor || '#6200ee' }]}
-                  color={getContrastTextColor(member.iconColor || '#6200ee')}
+                  style={styles.avatar}
                 />
                 <View style={styles.memberInfo}>
                   <Text style={styles.memberName} numberOfLines={1}>{member.displayName || 'Unknown'}</Text>

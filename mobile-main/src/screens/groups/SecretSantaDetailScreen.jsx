@@ -29,6 +29,7 @@ import DateTimeSelector, { formatDateByType } from '../../components/DateTimeSel
 import { useFocusEffect } from '@react-navigation/native';
 import CustomNavigationHeader from '../../components/CustomNavigationHeader';
 import api from '../../services/api';
+import UserAvatar from '../../components/shared/UserAvatar';
 
 export default function SecretSantaDetailScreen({ navigation, route }) {
   const { groupId, krisKringleId, eventName } = route.params;
@@ -176,7 +177,7 @@ export default function SecretSantaDetailScreen({ navigation, route }) {
   const handleAddMember = async (member) => {
     // Check if already added
     if (event.participants?.some(p => p.groupMemberId === member.groupMemberId)) {
-      CustomAlert.alert('Already Added', `${member.displayName || member.user?.displayName} is already a participant`);
+      CustomAlert.alert('Already Added', `${member.user?.displayName || member.displayName} is already a participant`);
       return;
     }
 
@@ -736,11 +737,14 @@ export default function SecretSantaDetailScreen({ navigation, route }) {
                     description={member.user?.email || member.email}
                     onPress={() => handleAddMember(member)}
                     left={() => (
-                      <View style={[styles.memberIcon, { backgroundColor: member.user?.iconColor || member.iconColor || '#6200ee' }]}>
-                        <Text style={styles.memberIconText}>
-                          {member.user?.memberIcon || member.iconLetters || '??'}
-                        </Text>
-                      </View>
+                      <UserAvatar
+                        profilePhotoUrl={member.user?.profilePhotoFileId ? `${api.defaults.baseURL}/files/${member.user.profilePhotoFileId}` : null}
+                        memberIcon={member.user?.memberIcon || member.iconLetters}
+                        iconColor={member.user?.iconColor || member.iconColor || '#6200ee'}
+                        displayName={member.user?.displayName || member.displayName}
+                        size={40}
+                        style={styles.memberIcon}
+                      />
                     )}
                   />
                 ))}

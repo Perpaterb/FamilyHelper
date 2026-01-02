@@ -24,6 +24,7 @@ import {
 import api from '../../services/api';
 import CustomNavigationHeader from '../../components/CustomNavigationHeader';
 import DateTimeSelector, { formatDateByType } from '../../components/DateTimeSelector';
+import UserAvatar from '../../components/shared/UserAvatar';
 
 export default function CreateSecretSantaScreen({ navigation, route }) {
   const { groupId } = route.params;
@@ -78,7 +79,7 @@ export default function CreateSecretSantaScreen({ navigation, route }) {
   const handleAddMember = (member) => {
     // Check if already added
     if (participants.some(p => p.groupMemberId === member.groupMemberId)) {
-      CustomAlert.alert('Already Added', `${member.displayName || member.user?.displayName} is already a participant`);
+      CustomAlert.alert('Already Added', `${member.user?.displayName || member.displayName} is already a participant`);
       return;
     }
 
@@ -380,11 +381,14 @@ export default function CreateSecretSantaScreen({ navigation, route }) {
                     description={member.user?.email || member.email}
                     onPress={() => handleAddMember(member)}
                     left={() => (
-                      <View style={[styles.memberIcon, { backgroundColor: member.user?.iconColor || member.iconColor || '#6200ee' }]}>
-                        <Text style={styles.memberIconText}>
-                          {member.user?.memberIcon || member.iconLetters || '??'}
-                        </Text>
-                      </View>
+                      <UserAvatar
+                        profilePhotoUrl={member.user?.profilePhotoFileId ? `${api.defaults.baseURL}/files/${member.user.profilePhotoFileId}` : null}
+                        memberIcon={member.user?.memberIcon || member.iconLetters}
+                        iconColor={member.user?.iconColor || member.iconColor || '#6200ee'}
+                        displayName={member.user?.displayName || member.displayName}
+                        size={40}
+                        style={styles.memberIcon}
+                      />
                     )}
                   />
                 ))}
