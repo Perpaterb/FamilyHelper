@@ -372,6 +372,14 @@ async function getApprovals(req, res) {
         displayName: true,
         iconLetters: true,
         iconColor: true,
+        user: {
+          select: {
+            displayName: true,
+            memberIcon: true,
+            iconColor: true,
+            profilePhotoFileId: true,
+          },
+        },
       },
     });
 
@@ -397,6 +405,9 @@ async function getApprovals(req, res) {
               select: {
                 email: true,
                 displayName: true,
+                memberIcon: true,
+                iconColor: true,
+                profilePhotoFileId: true,
               },
             },
           },
@@ -409,6 +420,14 @@ async function getApprovals(req, res) {
                 displayName: true,
                 iconLetters: true,
                 iconColor: true,
+                user: {
+                  select: {
+                    displayName: true,
+                    memberIcon: true,
+                    iconColor: true,
+                    profilePhotoFileId: true,
+                  },
+                },
               },
             },
           },
@@ -489,44 +508,66 @@ async function getApprovals(req, res) {
       // Get the snapshot of admin IDs from approval creation time
       const snapshotAdminIds = data.allAdminIds || [];
 
+      // Helper to generate profile photo URL
+      const getProfilePhotoUrl = (profilePhotoFileId) => {
+        return profilePhotoFileId
+          ? `${process.env.API_BASE_URL || 'http://localhost:3000'}/files/${profilePhotoFileId}`
+          : null;
+      };
+
+      // Helper to get admin display info with user profile hierarchy
+      const getAdminDisplayInfo = (admin, voteRecord) => {
+        // Use user profile data if available (hierarchy: user > group member placeholder)
+        const user = admin?.user || voteRecord?.admin?.user;
+        const displayName = user?.displayName || admin?.displayName || voteRecord?.admin?.displayName;
+        const iconLetters = user?.memberIcon || admin?.iconLetters || voteRecord?.admin?.iconLetters;
+        const iconColor = user?.iconColor || admin?.iconColor || voteRecord?.admin?.iconColor;
+        const profilePhotoUrl = getProfilePhotoUrl(user?.profilePhotoFileId);
+
+        return { displayName, iconLetters, iconColor, profilePhotoUrl };
+      };
+
       if (snapshotAdminIds.length > 0) {
         // Use the snapshot from approvalData (correct approach)
         allAdminStatuses = snapshotAdminIds.map(adminId => {
           const voteRecord = approval.votes.find(v => v.adminId === adminId);
+          const adminInfo = allAdmins.find(a => a.groupMemberId === adminId);
 
           if (voteRecord) {
-            // Admin has voted
+            // Admin has voted - use vote record admin info with user hierarchy
+            const displayInfo = getAdminDisplayInfo(adminInfo, voteRecord);
             return {
               groupMemberId: voteRecord.admin.groupMemberId,
-              displayName: voteRecord.admin.displayName,
-              iconLetters: voteRecord.admin.iconLetters,
-              iconColor: voteRecord.admin.iconColor,
+              displayName: displayInfo.displayName,
+              iconLetters: displayInfo.iconLetters,
+              iconColor: displayInfo.iconColor,
+              profilePhotoUrl: displayInfo.profilePhotoUrl,
               voteStatus: voteRecord.vote, // 'approve' or 'reject'
               isAutoApproved: voteRecord.isAutoApproved || false,
             };
+          } else if (adminInfo) {
+            // Admin hasn't voted yet - use current admin info with user hierarchy
+            const displayInfo = getAdminDisplayInfo(adminInfo, null);
+            return {
+              groupMemberId: adminInfo.groupMemberId,
+              displayName: displayInfo.displayName,
+              iconLetters: displayInfo.iconLetters,
+              iconColor: displayInfo.iconColor,
+              profilePhotoUrl: displayInfo.profilePhotoUrl,
+              voteStatus: 'pending',
+              isAutoApproved: false,
+            };
           } else {
-            // Admin hasn't voted yet - look them up from allAdmins
-            const adminInfo = allAdmins.find(a => a.groupMemberId === adminId);
-            if (adminInfo) {
-              return {
-                groupMemberId: adminInfo.groupMemberId,
-                displayName: adminInfo.displayName,
-                iconLetters: adminInfo.iconLetters,
-                iconColor: adminInfo.iconColor,
-                voteStatus: 'pending',
-                isAutoApproved: false,
-              };
-            } else {
-              // Admin was removed from group - still show them as pending
-              return {
-                groupMemberId: adminId,
-                displayName: 'Former Admin',
-                iconLetters: 'FA',
-                iconColor: '#9e9e9e',
-                voteStatus: 'pending',
-                isAutoApproved: false,
-              };
-            }
+            // Admin was removed from group - still show them as pending
+            return {
+              groupMemberId: adminId,
+              displayName: 'Former Admin',
+              iconLetters: 'FA',
+              iconColor: '#9e9e9e',
+              profilePhotoUrl: null,
+              voteStatus: 'pending',
+              isAutoApproved: false,
+            };
           }
         });
       } else {
@@ -534,22 +575,25 @@ async function getApprovals(req, res) {
         // Fall back to using current admins list
         allAdminStatuses = allAdmins.map(admin => {
           const voteRecord = approval.votes.find(v => v.adminId === admin.groupMemberId);
+          const displayInfo = getAdminDisplayInfo(admin, voteRecord);
 
           if (voteRecord) {
             return {
               groupMemberId: voteRecord.admin.groupMemberId,
-              displayName: voteRecord.admin.displayName,
-              iconLetters: voteRecord.admin.iconLetters,
-              iconColor: voteRecord.admin.iconColor,
+              displayName: displayInfo.displayName,
+              iconLetters: displayInfo.iconLetters,
+              iconColor: displayInfo.iconColor,
+              profilePhotoUrl: displayInfo.profilePhotoUrl,
               voteStatus: voteRecord.vote,
               isAutoApproved: voteRecord.isAutoApproved || false,
             };
           } else {
             return {
               groupMemberId: admin.groupMemberId,
-              displayName: admin.displayName,
-              iconLetters: admin.iconLetters,
-              iconColor: admin.iconColor,
+              displayName: displayInfo.displayName,
+              iconLetters: displayInfo.iconLetters,
+              iconColor: displayInfo.iconColor,
+              profilePhotoUrl: displayInfo.profilePhotoUrl,
               voteStatus: 'pending',
               isAutoApproved: false,
             };
@@ -557,15 +601,26 @@ async function getApprovals(req, res) {
         });
       }
 
+      // Transform requester with user profile data
+      const requesterUser = approval.requester?.user;
+      const transformedRequester = {
+        ...approval.requester,
+        displayName: requesterUser?.displayName || approval.requester?.displayName,
+        iconLetters: requesterUser?.memberIcon || approval.requester?.iconLetters,
+        iconColor: requesterUser?.iconColor || approval.requester?.iconColor,
+        profilePhotoUrl: getProfilePhotoUrl(requesterUser?.profilePhotoFileId),
+      };
+
       return {
         ...approval,
+        requester: transformedRequester,
         description,
         totalAdmins,
         approveVotes,
         rejectVotes,
         hasUserVoted,
         userVote: userVote?.vote || null,
-        allAdminStatuses, // NEW: List of all admins with their vote status
+        allAdminStatuses, // List of all admins with their vote status
       };
     });
 

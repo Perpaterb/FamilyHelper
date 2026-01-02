@@ -144,7 +144,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   titleContainer: {
-    flex: 2,
+    flex: 3,
     alignItems: 'center',
     justifyContent: 'center',
   },

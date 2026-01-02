@@ -3328,6 +3328,36 @@ async function updateGroupSettings(req, res) {
           changesDesc.push(`Video call recording: ${actualChanges.recordVideoCalls ? 'ON' : 'OFF'}`);
         }
 
+        // Check if other admins have granted auto-approve permission for group settings
+        const otherAdmins = allAdmins.filter(a => a.groupMemberId !== membership.groupMemberId);
+
+        // Check if enough other admins have granted auto-approve permission (>50%)
+        const autoApprovePermissions = await prisma.adminPermission.findMany({
+          where: {
+            groupId: groupId,
+            receivingAdminId: membership.groupMemberId,
+            autoApproveChangeGroupSettings: true,
+          },
+          select: {
+            grantingAdminId: true,
+          },
+        });
+
+        const grantorIds = new Set(autoApprovePermissions.map(p => p.grantingAdminId));
+
+        // Count votes: requester (1) + auto-approvers
+        const requesterVote = 1;
+        const autoApproveVoters = otherAdmins.filter(admin => grantorIds.has(admin.groupMemberId));
+        const autoApproveVoteCount = autoApproveVoters.length;
+        const totalVotes = requesterVote + autoApproveVoteCount;
+        const approvalPercentage = (totalVotes / adminCount) * 100;
+
+        // Need >50% approval
+        const canAutoApprove = approvalPercentage > 50;
+
+        // Determine status: auto-approve if only 1 admin OR if >50% admins granted permission
+        const shouldAutoApprove = adminCount < 2 || canAutoApprove;
+
         const approval = await prisma.approval.create({
           data: {
             groupId: groupId,
@@ -3335,7 +3365,8 @@ async function updateGroupSettings(req, res) {
             approvalType: 'change_recording_settings',
             requiresAllAdmins: false,
             requiredApprovalPercentage: '50.00',
-            status: 'pending',
+            status: shouldAutoApprove ? 'approved' : 'pending',
+            completedAt: shouldAutoApprove ? new Date() : null,
             approvalData: JSON.stringify({
               ...actualChanges,
               allAdminIds: allAdminIds,
@@ -3354,22 +3385,22 @@ async function updateGroupSettings(req, res) {
           },
         });
 
-        // Check if >50% threshold is already met (requester is 1 vote)
-        const requiredVotes = Math.floor(adminCount / 2) + 1; // >50%
-        if (1 >= requiredVotes) {
-          // Solo admin or exactly 50% - auto-approve
-          await prisma.approval.update({
-            where: { approvalId: approval.approvalId },
-            data: {
-              status: 'approved',
-              completedAt: new Date(),
-            },
+        // If auto-approved, create votes for other admins who granted permission
+        if (shouldAutoApprove && autoApproveVoters.length > 0) {
+          await prisma.approvalVote.createMany({
+            data: autoApproveVoters.map(admin => ({
+              approvalId: approval.approvalId,
+              adminId: admin.groupMemberId,
+              vote: 'approve',
+              isAutoApproved: true,
+            })),
           });
+        }
 
-          // Execute the change
+        if (shouldAutoApprove) {
+          // Execute the change immediately
           const { executeApprovedAction } = require('./approvals.controller');
           await executeApprovedAction(approval);
-
         } else {
           recordingApprovalCreated = true;
           pendingRecordingChanges = changesDesc;
@@ -3534,6 +3565,7 @@ async function getAdminPermissions(req, res) {
             displayName: true,
             memberIcon: true,
             iconColor: true,
+            profilePhotoFileId: true,
           },
         },
       },
@@ -3565,8 +3597,14 @@ async function getAdminPermissions(req, res) {
       // Find permissions for this admin
       const adminPermission = permissions.find(p => p.receivingAdminId === admin.groupMemberId);
 
+      // Generate profile photo URL if user has one
+      const profilePhotoUrl = admin.user?.profilePhotoFileId
+        ? `${process.env.API_BASE_URL || 'http://localhost:3000'}/files/${admin.user.profilePhotoFileId}`
+        : null;
+
       return {
         ...admin,
+        profilePhotoUrl,
         permissions: {
           canAddMembers: adminPermission?.autoApproveAddPeople || false,
           canRemoveMembers: adminPermission?.autoApproveRemovePeople || false,

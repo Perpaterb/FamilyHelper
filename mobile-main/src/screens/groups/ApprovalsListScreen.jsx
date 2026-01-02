@@ -10,10 +10,10 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, ScrollView, RefreshControl } from 'react-native';
 import { CustomAlert } from '../../components/CustomAlert';
-import { Card, Text, Button, Avatar, Chip, Divider, List, ActivityIndicator } from 'react-native-paper';
+import { Card, Text, Button, Chip, Divider, List, ActivityIndicator } from 'react-native-paper';
 import { useFocusEffect } from '@react-navigation/native';
 import api from '../../services/api';
-import { getContrastTextColor } from '../../utils/colorUtils';
+import UserAvatar from '../../components/shared/UserAvatar';
 import CustomNavigationHeader from '../../components/CustomNavigationHeader';
 
 /**
@@ -210,7 +210,6 @@ export default function ApprovalsListScreen({ navigation, route }) {
    */
   const renderApprovalCard = (approval, type) => {
     const { approvalType, requester, requestedAt, status, description } = approval;
-    const bgColor = requester.iconColor || '#6200ee';
     const adminStatuses = getAdminVoteStatuses(approval);
 
     // Get card background color based on completion status
@@ -228,11 +227,12 @@ export default function ApprovalsListScreen({ navigation, route }) {
         <Card.Content>
           {/* Header with requester info */}
           <View style={styles.cardHeader}>
-            <Avatar.Text
+            <UserAvatar
               size={40}
-              label={requester.iconLetters || '?'}
-              style={{ backgroundColor: bgColor }}
-              color={getContrastTextColor(bgColor)}
+              profilePhotoUrl={requester.profilePhotoUrl}
+              memberIcon={requester.iconLetters}
+              iconColor={requester.iconColor || '#6200ee'}
+              displayName={requester.displayName}
             />
             <View style={styles.cardHeaderInfo}>
               <Text style={styles.requesterName} numberOfLines={1}>{requester.displayName}</Text>
@@ -258,11 +258,12 @@ export default function ApprovalsListScreen({ navigation, route }) {
             <Text style={styles.adminVotesTitle}>Admin Votes:</Text>
             {adminStatuses.map(admin => (
               <View key={admin.groupMemberId} style={styles.adminVoteRow}>
-                <Avatar.Text
+                <UserAvatar
                   size={32}
-                  label={admin.iconLetters || '?'}
-                  style={{ backgroundColor: admin.iconColor || '#6200ee' }}
-                  color={getContrastTextColor(admin.iconColor || '#6200ee')}
+                  profilePhotoUrl={admin.profilePhotoUrl}
+                  memberIcon={admin.iconLetters}
+                  iconColor={admin.iconColor || '#6200ee'}
+                  displayName={admin.displayName}
                 />
                 <Text style={styles.adminVoteName} numberOfLines={1}>{admin.displayName}</Text>
                 <Chip

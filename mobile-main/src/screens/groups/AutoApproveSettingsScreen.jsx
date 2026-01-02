@@ -7,9 +7,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, FlatList, ScrollView } from 'react-native';
-import { Card, Title, Text, Switch, Avatar, Divider, ActivityIndicator } from 'react-native-paper';
+import { Card, Title, Text, Switch, Divider, ActivityIndicator } from 'react-native-paper';
 import api from '../../services/api';
-import { getContrastTextColor } from '../../utils/colorUtils';
+import UserAvatar from '../../components/shared/UserAvatar';
 import CustomNavigationHeader from '../../components/CustomNavigationHeader';
 
 /**
@@ -152,11 +152,12 @@ export default function AutoApproveSettingsScreen({ navigation, route }) {
       <Card style={styles.card} key={admin.groupMemberId}>
         <Card.Content>
           <View style={styles.adminHeader}>
-            <Avatar.Text
+            <UserAvatar
               size={48}
-              label={iconLetters}
-              style={{ backgroundColor: bgColor }}
-              color={getContrastTextColor(bgColor)}
+              profilePhotoUrl={admin.profilePhotoUrl}
+              memberIcon={iconLetters}
+              iconColor={bgColor}
+              displayName={displayName}
             />
             <View style={styles.adminInfo}>
               <Title style={styles.adminName}>{displayName}</Title>
