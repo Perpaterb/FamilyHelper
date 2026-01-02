@@ -143,7 +143,10 @@ export default function AutoApproveSettingsScreen({ navigation, route }) {
    * Render admin card with all permissions
    */
   const renderAdmin = ({ item: admin }) => {
-    const bgColor = admin.iconColor || '#6200ee';
+    // Use user profile data first, then fall back to group member placeholder
+    const displayName = admin.user?.displayName || admin.displayName;
+    const iconLetters = admin.user?.memberIcon || admin.iconLetters || '?';
+    const bgColor = admin.user?.iconColor || admin.iconColor || '#6200ee';
 
     return (
       <Card style={styles.card} key={admin.groupMemberId}>
@@ -151,12 +154,12 @@ export default function AutoApproveSettingsScreen({ navigation, route }) {
           <View style={styles.adminHeader}>
             <Avatar.Text
               size={48}
-              label={admin.iconLetters || '?'}
+              label={iconLetters}
               style={{ backgroundColor: bgColor }}
               color={getContrastTextColor(bgColor)}
             />
             <View style={styles.adminInfo}>
-              <Title style={styles.adminName}>{admin.displayName}</Title>
+              <Title style={styles.adminName}>{displayName}</Title>
               <Text style={styles.helpText}>
                 Toggle permissions to auto-approve actions from this admin
               </Text>

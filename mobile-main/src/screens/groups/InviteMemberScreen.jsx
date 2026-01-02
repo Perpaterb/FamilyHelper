@@ -103,10 +103,13 @@ export default function InviteMemberScreen({ navigation, route }) {
         iconColor: iconColor,
       });
 
-      // Show success message and navigate back
+      // Show appropriate message based on whether approval is required
+      const title = response.data.requiresApproval ? 'Approval Required' : 'Invitation Sent';
+      const message = response.data.message || `Invitation sent to ${email}. They will be added as a ${role}.`;
+
       CustomAlert.alert(
-        'Invitation Sent',
-        `Invitation sent to ${email}. They will be added as a ${role}.`,
+        title,
+        message,
         [
           {
             text: 'OK',

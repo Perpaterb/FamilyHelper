@@ -248,7 +248,10 @@ export default function GroupSettingsScreen({ navigation, route }) {
 
       const response = await api.put(`/groups/${groupId}/settings`, groupSettings);
 
-      CustomAlert.alert('Success', 'Group settings saved successfully');
+      // Show appropriate message based on whether approval is required
+      const title = response.data.pendingApproval ? 'Approval Required' : 'Success';
+      const message = response.data.message || 'Group settings saved successfully';
+      CustomAlert.alert(title, message);
     } catch (err) {
       console.error('Save group settings error:', err);
 

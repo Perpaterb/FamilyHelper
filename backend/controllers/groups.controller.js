@@ -3503,7 +3503,7 @@ async function getAdminPermissions(req, res) {
       });
     }
 
-    // Get all admins in the group
+    // Get all admins in the group (including user profile data for display hierarchy)
     const admins = await prisma.groupMember.findMany({
       where: {
         groupId: groupId,
@@ -3516,6 +3516,14 @@ async function getAdminPermissions(req, res) {
         iconLetters: true,
         iconColor: true,
         email: true,
+        user: {
+          select: {
+            displayName: true,
+            memberIcon: true,
+            iconColor: true,
+            profilePhotoUrl: true,
+          },
+        },
       },
     });
 
