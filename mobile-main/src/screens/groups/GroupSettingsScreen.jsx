@@ -24,6 +24,7 @@ import {
   HelperText,
 } from 'react-native-paper';
 import { useFocusEffect } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import * as ImageManipulator from 'expo-image-manipulator';
 import api from '../../services/api';
@@ -46,6 +47,7 @@ import ColorPickerModal from '../../components/ColorPickerModal';
  */
 export default function GroupSettingsScreen({ navigation, route }) {
   const { groupId } = route.params;
+  const insets = useSafeAreaInsets();
   const [groupInfo, setGroupInfo] = useState(null);
   const [members, setMembers] = useState([]);
   const [userRole, setUserRole] = useState(null);
@@ -1010,7 +1012,7 @@ export default function GroupSettingsScreen({ navigation, route }) {
           <Text>Group not found</Text>
         </View>
       ) : (
-        <ScrollView style={styles.scrollView}>
+        <ScrollView style={styles.scrollView} contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 16) + 20 }}>
       {/* Group Details Section */}
       {userRole === 'admin' && (
         <Card style={styles.card}>
