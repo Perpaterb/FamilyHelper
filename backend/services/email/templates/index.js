@@ -319,12 +319,40 @@ ${inviterName} has invited you to join the group "${groupName}" on Family Helper
 
 Your Role: ${role.charAt(0).toUpperCase() + role.slice(1)}
 
-Family Helper helps families coordinate with:
-- Secure messaging between family members
-- Shared calendar for scheduling
-- Financial tracking for shared expenses
-- Document storage and wiki
-- Complete audit logs for transparency
+Family Helper makes family coordination easier with:
+
+🔒 Secure & Encrypted Messaging
+   End-to-end encrypted group messaging with media sharing, mentions, and read receipts.
+
+🎙️ Audio Messages
+   Record and send voice messages. All audio is encrypted and stored securely.
+
+📞 Phone Calls
+   Make voice calls with group members. All recordings encrypted and stored securely.
+
+👋 Video Calls
+   Make video calls with group members. All recordings encrypted and stored securely.
+
+📅 Shared Calendar
+   Coordinate schedules with events, child responsibilities, and handoff tracking.
+
+💰 Finance Tracking
+   Track shared expenses, balances, and financial communications.
+
+🎁 Gift Registry
+   Manage wish lists and gift registries for birthdays and holidays.
+
+🎅 Secret Santa
+   Organise gift exchanges with automatic matching and anonymous wishlists.
+
+📖 Secure Wiki Documents
+   Create and share important information like recipes and instructions.
+
+📁 Secure Storage
+   Upload and manage important documents securely.
+
+📜 Audit Logs
+   Complete history of all actions for accountability, legal compliance, and court order adherence.
 
 To accept this invitation:
 1. Log in to Family Helper at: ${appUrl}
@@ -362,13 +390,86 @@ ${appUrl}
 
     <h2 style="color: #333; font-size: 18px;">What is Family Helper?</h2>
     <p style="color: #666;">Family Helper makes family coordination easier with:</p>
-    <ul style="color: #666;">
-      <li>Secure messaging between family members</li>
-      <li>Shared calendar for scheduling</li>
-      <li>Financial tracking for shared expenses</li>
-      <li>Document storage and wiki</li>
-      <li>Complete audit logs for transparency</li>
-    </ul>
+
+    <table style="width: 100%; border-collapse: collapse; margin: 15px 0;">
+      <tr>
+        <td style="padding: 10px; vertical-align: top; width: 30px; font-size: 20px;">🔒</td>
+        <td style="padding: 10px; vertical-align: top;">
+          <strong style="color: #333;">Secure & Encrypted Messaging</strong><br>
+          <span style="color: #666; font-size: 14px;">End-to-end encrypted group messaging with media sharing, mentions, and read receipts.</span>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding: 10px; vertical-align: top; font-size: 20px;">🎙️</td>
+        <td style="padding: 10px; vertical-align: top;">
+          <strong style="color: #333;">Audio Messages</strong><br>
+          <span style="color: #666; font-size: 14px;">Record and send voice messages. All audio is encrypted and stored securely.</span>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding: 10px; vertical-align: top; font-size: 20px;">📞</td>
+        <td style="padding: 10px; vertical-align: top;">
+          <strong style="color: #333;">Phone Calls</strong><br>
+          <span style="color: #666; font-size: 14px;">Make voice calls with group members. All recordings encrypted and stored securely.</span>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding: 10px; vertical-align: top; font-size: 20px;">👋</td>
+        <td style="padding: 10px; vertical-align: top;">
+          <strong style="color: #333;">Video Calls</strong><br>
+          <span style="color: #666; font-size: 14px;">Make video calls with group members. All recordings encrypted and stored securely.</span>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding: 10px; vertical-align: top; font-size: 20px;">📅</td>
+        <td style="padding: 10px; vertical-align: top;">
+          <strong style="color: #333;">Shared Calendar</strong><br>
+          <span style="color: #666; font-size: 14px;">Coordinate schedules with events, child responsibilities, and handoff tracking.</span>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding: 10px; vertical-align: top; font-size: 20px;">💰</td>
+        <td style="padding: 10px; vertical-align: top;">
+          <strong style="color: #333;">Finance Tracking</strong><br>
+          <span style="color: #666; font-size: 14px;">Track shared expenses, balances, and financial communications.</span>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding: 10px; vertical-align: top; font-size: 20px;">🎁</td>
+        <td style="padding: 10px; vertical-align: top;">
+          <strong style="color: #333;">Gift Registry</strong><br>
+          <span style="color: #666; font-size: 14px;">Manage wish lists and gift registries for birthdays and holidays.</span>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding: 10px; vertical-align: top; font-size: 20px;">🎅</td>
+        <td style="padding: 10px; vertical-align: top;">
+          <strong style="color: #333;">Secret Santa</strong><br>
+          <span style="color: #666; font-size: 14px;">Organise gift exchanges with automatic matching and anonymous wishlists.</span>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding: 10px; vertical-align: top; font-size: 20px;">📖</td>
+        <td style="padding: 10px; vertical-align: top;">
+          <strong style="color: #333;">Secure Wiki Documents</strong><br>
+          <span style="color: #666; font-size: 14px;">Create and share important information like recipes and instructions.</span>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding: 10px; vertical-align: top; font-size: 20px;">📁</td>
+        <td style="padding: 10px; vertical-align: top;">
+          <strong style="color: #333;">Secure Storage</strong><br>
+          <span style="color: #666; font-size: 14px;">Upload and manage important documents securely.</span>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding: 10px; vertical-align: top; font-size: 20px;">📜</td>
+        <td style="padding: 10px; vertical-align: top;">
+          <strong style="color: #333;">Audit Logs</strong><br>
+          <span style="color: #666; font-size: 14px;">Complete history of all actions for accountability, legal compliance, and court order adherence.</span>
+        </td>
+      </tr>
+    </table>
 
     <div style="text-align: center; margin: 30px 0;">
       <a href="${appUrl}" style="display: inline-block; background: #6200ee; color: white; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">
