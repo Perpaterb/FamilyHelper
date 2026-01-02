@@ -190,11 +190,12 @@ describe('GroupsListScreen', () => {
     });
 
     it('should display loading state initially', () => {
-      const { getByText } = renderWithProvider(
+      const { getByRole } = renderWithProvider(
         <GroupsListScreen navigation={mockNavigation} />
       );
 
-      expect(getByText('Loading groups...')).toBeTruthy();
+      // Loading state shows ActivityIndicator spinner
+      expect(getByRole('progressbar')).toBeTruthy();
     });
   });
 
