@@ -279,12 +279,12 @@ export default function GroupSettingsScreen({ navigation, route }) {
         defaultCurrency: currencyCode,
       }));
 
-      await api.put(`/groups/${groupId}/settings`, {
+      const response = await api.put(`/groups/${groupId}/settings`, {
         ...groupSettings,
         defaultCurrency: currencyCode,
       });
 
-      CustomAlert.alert('Success', `Default currency changed to ${currencyCode}`);
+      CustomAlert.alert('Success', response.data.message || `Default currency changed to ${currencyCode}`);
     } catch (err) {
       console.error('Change currency error:', err);
 
@@ -718,8 +718,8 @@ export default function GroupSettingsScreen({ navigation, route }) {
       // Check if approval is required
       if (response.data.requiresApproval) {
         CustomAlert.alert(
-          'Approval Requested',
-          `Your request to delete "${groupInfo.name}" requires approval from other admins. Check the Approvals screen to track its status.`,
+          'Approval Required',
+          response.data.message || `Your request to delete "${groupInfo.name}" requires approval from other admins.`,
           [
             { text: 'OK', onPress: () => navigation.navigate('Groups') },
           ]
@@ -729,7 +729,7 @@ export default function GroupSettingsScreen({ navigation, route }) {
 
       CustomAlert.alert(
         'Success',
-        'Group deleted successfully.',
+        response.data.message || 'Group deleted successfully.',
         [
           {
             text: 'OK',
@@ -837,8 +837,8 @@ export default function GroupSettingsScreen({ navigation, route }) {
       // Check if approval is required
       if (response.data.requiresApproval) {
         CustomAlert.alert(
-          'Approval Requested',
-          `Your request to change ${member.displayName || member.email}'s role to ${newRole} requires approval from other admins. Check the Approvals screen to track its status.`,
+          'Approval Required',
+          response.data.message || `Your request to change ${member.displayName || member.email}'s role requires approval from other admins.`,
           [
             { text: 'OK' },
           ]
@@ -846,7 +846,7 @@ export default function GroupSettingsScreen({ navigation, route }) {
         return;
       }
 
-      CustomAlert.alert('Success', `Role changed to ${newRole}`);
+      CustomAlert.alert('Success', response.data.message || `Role changed to ${newRole}`);
       loadGroupDetails(); // Reload to show updated role
     } catch (err) {
       console.error('Change role error:', err);
@@ -890,8 +890,8 @@ export default function GroupSettingsScreen({ navigation, route }) {
       // Check if approval is required
       if (response.data.requiresApproval) {
         CustomAlert.alert(
-          'Approval Requested',
-          `Your request to remove ${member.displayName || member.email} from the group requires approval from other admins. Check the Approvals screen to track its status.`,
+          'Approval Required',
+          response.data.message || `Your request to remove ${member.displayName || member.email} requires approval from other admins.`,
           [
             { text: 'OK' },
           ]
@@ -899,7 +899,7 @@ export default function GroupSettingsScreen({ navigation, route }) {
         return;
       }
 
-      CustomAlert.alert('Success', 'Member removed from group');
+      CustomAlert.alert('Success', response.data.message || 'Member removed from group');
       loadGroupDetails(); // Reload to show updated member list
     } catch (err) {
       console.error('Remove member error:', err);
