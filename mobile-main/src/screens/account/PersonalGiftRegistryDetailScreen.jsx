@@ -8,7 +8,8 @@
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, ScrollView, FlatList, TouchableOpacity, Linking, Image } from 'react-native';
 import { CustomAlert } from '../../components/CustomAlert';
-import { Card, Title, Text, Button, Divider, Chip, ActivityIndicator, FAB, IconButton } from 'react-native-paper';
+import { Card, Title, Text, Button, Divider, Chip, ActivityIndicator, IconButton } from 'react-native-paper';
+import SafeAreaFAB from '../../components/SafeAreaFAB';
 import { useFocusEffect } from '@react-navigation/native';
 import api from '../../services/api';
 import ImageViewer from '../../components/shared/ImageViewer';
@@ -423,7 +424,7 @@ export default function PersonalGiftRegistryDetailScreen({ navigation, route }) 
 
       {/* FAB for adding items - only show for owner */}
       {isOwner && (
-        <FAB
+        <SafeAreaFAB
           icon="plus"
           style={styles.fab}
           label="Add Item"

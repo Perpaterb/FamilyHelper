@@ -9,7 +9,8 @@
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, FlatList, TouchableOpacity, Modal, ScrollView, Platform } from 'react-native';
 import { CustomAlert } from '../../components/CustomAlert';
-import { Card, Title, Text, FAB, IconButton, Chip, Button, Divider, ActivityIndicator } from 'react-native-paper';
+import { Card, Title, Text, IconButton, Chip, Button, Divider, ActivityIndicator } from 'react-native-paper';
+import SafeAreaFAB from '../../components/SafeAreaFAB';
 import { useFocusEffect } from '@react-navigation/native';
 import api from '../../services/api';
 import CustomNavigationHeader from '../../components/CustomNavigationHeader';
@@ -458,7 +459,7 @@ export default function ItemRegistryListScreen({ navigation, route }) {
       )}
 
       {canCreate && (
-        <FAB
+        <SafeAreaFAB
           style={styles.fab}
           icon="plus"
           label="New Registry"

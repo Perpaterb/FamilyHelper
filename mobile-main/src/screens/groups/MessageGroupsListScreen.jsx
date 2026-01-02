@@ -7,7 +7,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
-import { Card, Title, Text, FAB, Avatar, Chip, IconButton, ActivityIndicator } from 'react-native-paper';
+import { Card, Title, Text, Avatar, Chip, IconButton, ActivityIndicator } from 'react-native-paper';
+import SafeAreaFAB from '../../components/SafeAreaFAB';
 import { useFocusEffect } from '@react-navigation/native';
 import api from '../../services/api';
 import { getContrastTextColor } from '../../utils/colorUtils';
@@ -365,7 +366,7 @@ export default function MessageGroupsListScreen({ navigation, route }) {
           />
 
           {canCreate && (
-            <FAB
+            <SafeAreaFAB
               style={styles.fab}
               icon="plus"
               label="New Message Group"

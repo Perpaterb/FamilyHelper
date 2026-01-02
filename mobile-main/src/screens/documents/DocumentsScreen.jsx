@@ -8,7 +8,8 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Platform,  } from 'react-native';
 import { CustomAlert } from '../../components/CustomAlert';
-import { FAB, IconButton, Menu, ActivityIndicator, Avatar } from 'react-native-paper';
+import { IconButton, Menu, ActivityIndicator, Avatar } from 'react-native-paper';
+import SafeAreaFAB from '../../components/SafeAreaFAB';
 import { useFocusEffect } from '@react-navigation/native';
 import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system/legacy';
@@ -453,7 +454,7 @@ export default function DocumentsScreen({ navigation, route }) {
 
       {/* Upload FAB */}
       {canCreate && (
-        <FAB
+        <SafeAreaFAB
           icon={uploading ? 'loading' : 'plus'}
           style={[
             styles.fab,
