@@ -3534,7 +3534,6 @@ async function getAdminPermissions(req, res) {
             displayName: true,
             memberIcon: true,
             iconColor: true,
-            profilePhotoUrl: true,
           },
         },
       },
