@@ -120,9 +120,8 @@ export default function LandingScreen({ navigation }) {
             style={{ textDecoration: 'none' }}
           >
             <View style={styles.storeButton}>
-              <MaterialCommunityIcons name="google-play" size={24} color="#fff" />
-              <View style={styles.storeButtonTextContainer}>
-                <Text style={styles.storeButtonSmallText}>&nbsp;</Text>
+              <MaterialCommunityIcons name="google-play" size={24} color="#fff" style={styles.storeButtonIcon} />
+              <View style={styles.storeButtonTextContainerCentered}>
                 <Text style={styles.storeButtonText}>Google Play</Text>
               </View>
             </View>
@@ -134,16 +133,15 @@ export default function LandingScreen({ navigation }) {
             style={{ textDecoration: 'none' }}
           >
             <View style={styles.storeButton}>
-              <MaterialCommunityIcons name="apple" size={24} color="#fff" />
-              <View style={styles.storeButtonTextContainer}>
-                <Text style={styles.storeButtonSmallText}>&nbsp;</Text>
+              <MaterialCommunityIcons name="apple" size={24} color="#fff" style={styles.storeButtonIcon} />
+              <View style={styles.storeButtonTextContainerCentered}>
                 <Text style={styles.storeButtonText}>App Store</Text>
               </View>
             </View>
           </a>
           <div onClick={() => login()} style={{ cursor: 'pointer' }}>
             <View style={styles.storeButton}>
-              <MaterialCommunityIcons name="web" size={24} color="#fff" />
+              <MaterialCommunityIcons name="web" size={24} color="#fff" style={styles.storeButtonIcon} />
               <View style={styles.storeButtonTextContainer}>
                 <Text style={styles.storeButtonSmallText}>Login for web based full featured app</Text>
                 <Text style={styles.storeButtonText}>Audit Logs, Storage & Subscriptions</Text>
@@ -368,20 +366,27 @@ const styles = StyleSheet.create({
   storeButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
     backgroundColor: 'rgba(0, 0, 0, 0.3)',
     borderRadius: 8,
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.3)',
-    minWidth: 200,
-    minHeight: 56,
+    minWidth: 280,
+    height: 56,
+  },
+  storeButtonIcon: {
+    width: 24,
+    marginRight: 12,
   },
   storeButtonTextContainer: {
-    marginLeft: 10,
-    flexShrink: 0,
+    flex: 1,
     justifyContent: 'center',
+  },
+  storeButtonTextContainerCentered: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'flex-start',
   },
   storeButtonSmallText: {
     color: '#fff',
