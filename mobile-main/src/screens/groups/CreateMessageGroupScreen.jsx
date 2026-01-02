@@ -250,7 +250,7 @@ export default function CreateMessageGroupScreen({ navigation, route }) {
                   color={getContrastTextColor(member.iconColor || '#6200ee')}
                 />
                 <View style={styles.memberInfo}>
-                  <Text style={styles.memberName}>{member.displayName || 'Unknown'}</Text>
+                  <Text style={styles.memberName} numberOfLines={1}>{member.displayName || 'Unknown'}</Text>
                   <Text style={styles.memberRole}>{member.role}</Text>
                 </View>
               </TouchableOpacity>

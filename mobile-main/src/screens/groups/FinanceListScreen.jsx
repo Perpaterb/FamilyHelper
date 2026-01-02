@@ -8,7 +8,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
-import { Card, Title, Text, FAB, Avatar, Chip, Badge } from 'react-native-paper';
+import { Card, Title, Text, FAB, Avatar, Chip, Badge, ActivityIndicator } from 'react-native-paper';
 import { useFocusEffect } from '@react-navigation/native';
 import api from '../../services/api';
 import { getContrastTextColor } from '../../utils/colorUtils';
@@ -256,8 +256,14 @@ export default function FinanceListScreen({ navigation, route }) {
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
-        <Text>Loading finance matters...</Text>
+      <View style={styles.container}>
+        <CustomNavigationHeader
+          title="Finance"
+          onBack={() => navigation.goBack()}
+        />
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#6200ee" />
+        </View>
       </View>
     );
   }

@@ -142,7 +142,7 @@ export default function InitiatePhoneCallScreen({ navigation, route }) {
               style={{ marginHorizontal: 12 }}
             />
             <View style={styles.memberInfo}>
-              <Text style={styles.memberName}>{item.displayName || 'Unknown'}</Text>
+              <Text style={styles.memberName} numberOfLines={1}>{item.displayName || 'Unknown'}</Text>
               <Text style={styles.memberRole}>{item.role}</Text>
             </View>
           </Card.Content>

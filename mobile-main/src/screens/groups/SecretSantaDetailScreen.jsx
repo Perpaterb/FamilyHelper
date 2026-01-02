@@ -400,8 +400,14 @@ export default function SecretSantaDetailScreen({ navigation, route }) {
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#6200ee" />
+      <View style={styles.container}>
+        <CustomNavigationHeader
+          title={eventName || 'Secret Santa'}
+          onBack={() => navigation.goBack()}
+        />
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#6200ee" />
+        </View>
       </View>
     );
   }

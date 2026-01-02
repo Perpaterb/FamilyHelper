@@ -7,7 +7,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
-import { Card, Title, Text, FAB, Avatar, Chip, IconButton } from 'react-native-paper';
+import { Card, Title, Text, FAB, Avatar, Chip, IconButton, ActivityIndicator } from 'react-native-paper';
 import { useFocusEffect } from '@react-navigation/native';
 import api from '../../services/api';
 import { getContrastTextColor } from '../../utils/colorUtils';
@@ -311,7 +311,7 @@ export default function MessageGroupsListScreen({ navigation, route }) {
                       displayName={member.groupMember?.displayName}
                       size={32}
                     />
-                    <Text style={styles.memberExpandedName}>
+                    <Text style={styles.memberExpandedName} numberOfLines={1}>
                       {member.groupMember?.displayName || 'Unknown'}
                     </Text>
                   </View>
@@ -346,7 +346,7 @@ export default function MessageGroupsListScreen({ navigation, route }) {
 
       {loading ? (
         <View style={styles.loadingContainer}>
-          <Text>Loading message groups...</Text>
+          <ActivityIndicator size="large" color="#6200ee" />
         </View>
       ) : (
         <>

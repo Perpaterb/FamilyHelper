@@ -43,7 +43,7 @@ You're on a 20-day free trial. During this time, you can explore all features wi
 
 After the trial, subscribe for just $3 USD/month to continue as an admin.
 
-Need help? Reply to this email or visit our support page.
+Need help? Contact support@familyhelperapp.com
 
 Best regards,
 The Family Helper Team
@@ -91,7 +91,7 @@ The Family Helper Team
   <hr style="border: none; border-top: 1px solid #ecf0f1; margin: 30px 0;">
 
   <p style="color: #7f8c8d; font-size: 14px;">
-    Need help? Reply to this email or visit our support page.
+    Need help? Contact support@familyhelperapp.com
   </p>
 
   <p style="color: #7f8c8d; font-size: 14px;">
@@ -139,7 +139,7 @@ What happens if you don't subscribe:
 - All data will be preserved
 - You can reactivate by subscribing later
 
-Questions? Reply to this email and we'll help.
+Questions? Contact support@familyhelperapp.com
 
 Best regards,
 The Family Helper Team
@@ -179,7 +179,7 @@ The Family Helper Team
   <hr style="border: none; border-top: 1px solid #ecf0f1; margin: 30px 0;">
 
   <p style="color: #7f8c8d; font-size: 14px;">
-    Questions? Reply to this email and we'll help.
+    Questions? Contact support@familyhelperapp.com
   </p>
 
   <p style="color: #7f8c8d; font-size: 14px;">
@@ -232,7 +232,7 @@ Important:
 - Media links are temporary signed URLs
 - Save the export if you need long-term records
 
-Questions? Reply to this email.
+Questions? Contact support@familyhelperapp.com
 
 Best regards,
 The Family Helper Team
@@ -282,7 +282,7 @@ The Family Helper Team
   <hr style="border: none; border-top: 1px solid #ecf0f1; margin: 30px 0;">
 
   <p style="color: #7f8c8d; font-size: 14px;">
-    Questions? Reply to this email.
+    Questions? Contact support@familyhelperapp.com
   </p>
 
   <p style="color: #7f8c8d; font-size: 14px;">
@@ -333,7 +333,7 @@ To accept this invitation:
 
 If you don't have an account yet, you can create one for free at ${appUrl}.
 
-Questions? Reply to this email.
+Questions? Contact support@familyhelperapp.com
 
 Best regards,
 The Family Helper Team
@@ -383,7 +383,7 @@ ${appUrl}
 
   <div style="background: #f5f5f5; padding: 20px; text-align: center; border-top: 1px solid #eee;">
     <p style="color: #999; font-size: 12px; margin: 0 0 10px 0;">
-      Questions? Reply to this email.
+      Questions? Contact support@familyhelperapp.com
     </p>
     <p style="color: #999; font-size: 12px; margin: 0;">
       <strong>Family Helper App</strong><br>
@@ -430,7 +430,7 @@ To view this finance matter and manage your participation:
 2. Navigate to the "${groupName}" group
 3. Go to Finance
 
-Questions? Reply to this email.
+Questions? Contact support@familyhelperapp.com
 
 Best regards,
 The Family Helper Team
@@ -476,7 +476,7 @@ ${appUrl}
 
   <div style="background: #f5f5f5; padding: 20px; text-align: center; border-top: 1px solid #eee;">
     <p style="color: #999; font-size: 12px; margin: 0 0 10px 0;">
-      Questions? Reply to this email.
+      Questions? Contact support@familyhelperapp.com
     </p>
     <p style="color: #999; font-size: 12px; margin: 0;">
       <strong>Family Helper App</strong><br>
@@ -528,7 +528,7 @@ Your access code: ${passcode}
 
 Keep this code safe! You'll need it to see who you're buying for.
 
-Questions? Reply to this email.
+Questions? Contact support@familyhelperapp.com
 
 Best regards,
 The Family Helper Team
@@ -589,7 +589,7 @@ ${appUrl}
 
   <div style="background: #f5f5f5; padding: 20px; text-align: center; border-top: 1px solid #eee;">
     <p style="color: #999; font-size: 12px; margin: 0 0 10px 0;">
-      Questions? Reply to this email.
+      Questions? Contact support@familyhelperapp.com
     </p>
     <p style="color: #999; font-size: 12px; margin: 0;">
       <strong>Family Helper App</strong><br>

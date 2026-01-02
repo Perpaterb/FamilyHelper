@@ -932,7 +932,7 @@ export default function MessagesScreen({ navigation, route }) {
               {/* Footer - hide for single emoji */}
               {!isSingleEmoji && (
                 <View style={styles.messageFooter}>
-                  <Text style={styles.senderName}>
+                  <Text style={styles.senderName} numberOfLines={1}>
                     {item.sender?.displayName || 'Unknown'}
                   </Text>
                   <View style={styles.timeAndReceipt}>
@@ -945,7 +945,7 @@ export default function MessagesScreen({ navigation, route }) {
               {/* Minimal footer for single emoji */}
               {isSingleEmoji && (
                 <View style={styles.messageFooterMinimal}>
-                  <Text style={styles.senderNameSmall}>
+                  <Text style={styles.senderNameSmall} numberOfLines={1}>
                     {item.sender?.displayName || 'Unknown'}
                   </Text>
                   {isMyMessage && renderReadReceipt(item)}
@@ -1233,8 +1233,14 @@ export default function MessagesScreen({ navigation, route }) {
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
-        <Text>Loading messages...</Text>
+      <View style={styles.container}>
+        <CustomNavigationHeader
+          title={messageGroupName || 'Messages'}
+          onBack={() => navigation.goBack()}
+        />
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#6200ee" />
+        </View>
       </View>
     );
   }

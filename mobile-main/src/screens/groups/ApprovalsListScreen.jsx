@@ -10,7 +10,7 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, ScrollView, RefreshControl } from 'react-native';
 import { CustomAlert } from '../../components/CustomAlert';
-import { Card, Text, Button, Avatar, Chip, Divider, List } from 'react-native-paper';
+import { Card, Text, Button, Avatar, Chip, Divider, List, ActivityIndicator } from 'react-native-paper';
 import { useFocusEffect } from '@react-navigation/native';
 import api from '../../services/api';
 import { getContrastTextColor } from '../../utils/colorUtils';
@@ -235,7 +235,7 @@ export default function ApprovalsListScreen({ navigation, route }) {
               color={getContrastTextColor(bgColor)}
             />
             <View style={styles.cardHeaderInfo}>
-              <Text style={styles.requesterName}>{requester.displayName}</Text>
+              <Text style={styles.requesterName} numberOfLines={1}>{requester.displayName}</Text>
               <Text style={styles.timeText}>{formatDate(requestedAt)}</Text>
             </View>
             <Chip mode="outlined" style={getStatusChipStyle(status)} textStyle={styles.statusChipText}>
@@ -264,7 +264,7 @@ export default function ApprovalsListScreen({ navigation, route }) {
                   style={{ backgroundColor: admin.iconColor || '#6200ee' }}
                   color={getContrastTextColor(admin.iconColor || '#6200ee')}
                 />
-                <Text style={styles.adminVoteName}>{admin.displayName}</Text>
+                <Text style={styles.adminVoteName} numberOfLines={1}>{admin.displayName}</Text>
                 <Chip
                   mode="outlined"
                   style={[styles.voteStatusChip, getVoteStatusChipStyle(admin.voteStatus, admin.isAutoApproved)]}
@@ -334,8 +334,14 @@ export default function ApprovalsListScreen({ navigation, route }) {
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
-        <Text>Loading approvals...</Text>
+      <View style={styles.container}>
+        <CustomNavigationHeader
+          title="Approvals"
+          onBack={() => navigation.goBack()}
+        />
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#6200ee" />
+        </View>
       </View>
     );
   }

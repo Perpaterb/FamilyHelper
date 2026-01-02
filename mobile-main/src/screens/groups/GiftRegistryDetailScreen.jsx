@@ -8,7 +8,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, FlatList, TouchableOpacity, Linking, Image } from 'react-native';
 import { CustomAlert } from '../../components/CustomAlert';
-import { Card, Title, Text, FAB, IconButton, Button, Chip, Divider } from 'react-native-paper';
+import { Card, Title, Text, FAB, IconButton, Button, Chip, Divider, ActivityIndicator } from 'react-native-paper';
 import { useFocusEffect } from '@react-navigation/native';
 import api from '../../services/api';
 import ImageViewer from '../../components/shared/ImageViewer';
@@ -471,7 +471,13 @@ export default function GiftRegistryDetailScreen({ navigation, route }) {
   if (loading) {
     return (
       <View style={styles.container}>
-        <Text>Loading registry...</Text>
+        <CustomNavigationHeader
+          title="Registry Details"
+          onBack={() => navigation.goBack()}
+        />
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#6200ee" />
+        </View>
       </View>
     );
   }
@@ -534,6 +540,11 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f5f5f5',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   listContent: {
     paddingBottom: 80, // Space for FAB

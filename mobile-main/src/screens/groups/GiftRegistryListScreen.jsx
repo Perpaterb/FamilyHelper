@@ -9,7 +9,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, FlatList, TouchableOpacity, Modal, ScrollView, Platform } from 'react-native';
 import { CustomAlert } from '../../components/CustomAlert';
-import { Card, Title, Text, FAB, IconButton, Chip, Button, Divider } from 'react-native-paper';
+import { Card, Title, Text, FAB, IconButton, Chip, Button, Divider, ActivityIndicator } from 'react-native-paper';
 import { useFocusEffect } from '@react-navigation/native';
 import api from '../../services/api';
 import CustomNavigationHeader from '../../components/CustomNavigationHeader';
@@ -414,7 +414,13 @@ export default function GiftRegistryListScreen({ navigation, route }) {
   if (loading) {
     return (
       <View style={styles.container}>
-        <Text>Loading registries...</Text>
+        <CustomNavigationHeader
+          title="Gift Registries"
+          onBack={() => navigation.goBack()}
+        />
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#6200ee" />
+        </View>
       </View>
     );
   }
@@ -580,6 +586,11 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f5f5f5',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   listContent: {
     padding: 16,
