@@ -347,8 +347,14 @@ export default function MyAccountScreen({ navigation }) {
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
-        <Text>Loading account information...</Text>
+      <View style={styles.container}>
+        <CustomNavigationHeader
+          title="My Account"
+          onBack={() => navigation.goBack()}
+        />
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#6200ee" />
+        </View>
       </View>
     );
   }
