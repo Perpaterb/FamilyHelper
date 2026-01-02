@@ -122,6 +122,7 @@ export default function LandingScreen({ navigation }) {
             <View style={styles.storeButton}>
               <MaterialCommunityIcons name="google-play" size={24} color="#fff" />
               <View style={styles.storeButtonTextContainer}>
+                <Text style={styles.storeButtonSmallText}>&nbsp;</Text>
                 <Text style={styles.storeButtonText}>Google Play</Text>
               </View>
             </View>
@@ -135,6 +136,7 @@ export default function LandingScreen({ navigation }) {
             <View style={styles.storeButton}>
               <MaterialCommunityIcons name="apple" size={24} color="#fff" />
               <View style={styles.storeButtonTextContainer}>
+                <Text style={styles.storeButtonSmallText}>&nbsp;</Text>
                 <Text style={styles.storeButtonText}>App Store</Text>
               </View>
             </View>
@@ -143,7 +145,7 @@ export default function LandingScreen({ navigation }) {
             <View style={styles.storeButton}>
               <MaterialCommunityIcons name="web" size={24} color="#fff" />
               <View style={styles.storeButtonTextContainer}>
-                <Text style={styles.storeButtonSmallText}>Login for full web app</Text>
+                <Text style={styles.storeButtonSmallText}>Login for web based full featured app</Text>
                 <Text style={styles.storeButtonText}>Audit Logs, Storage & Subscriptions</Text>
               </View>
             </View>
@@ -366,6 +368,7 @@ const styles = StyleSheet.create({
   storeButton: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     backgroundColor: 'rgba(0, 0, 0, 0.3)',
     borderRadius: 8,
     paddingHorizontal: 16,
@@ -373,10 +376,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.3)',
     minWidth: 200,
+    minHeight: 56,
   },
   storeButtonTextContainer: {
     marginLeft: 10,
     flexShrink: 0,
+    justifyContent: 'center',
   },
   storeButtonSmallText: {
     color: '#fff',
