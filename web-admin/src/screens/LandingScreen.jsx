@@ -67,8 +67,8 @@ export default function LandingScreen({ navigation }) {
     { icon: '📅', title: 'Shared Calendar', description: 'Coordinate schedules with events, child responsibilities, and handoff tracking.' },
     { icon: '💰', title: 'Finance Tracking', description: 'Track shared expenses, balances, and financial communications.' },
     { icon: '🎁', title: 'Gift Registry', description: 'Manage wish lists and gift registries for birthdays and holidays.' },
-    { icon: '🎅', title: 'Secret Santa', description: 'Organize gift exchanges with automatic matching and anonymous wishlists.' },
-    { icon: '📖', title: 'Wiki Documents', description: 'Create and share important documents with rich text editing.' },
+    { icon: '🎅', title: 'Secret Santa', description: 'Organise gift exchanges with automatic matching and anonymous wishlists.' },
+    { icon: '📖', title: 'Secure Wiki Documents', description: 'Create and share important information like recipes and instructions.' },
     { icon: '📁', title: 'Secure Storage', description: 'Upload and manage important documents securely.' },
     { icon: '📜', title: 'Audit Logs', description: 'Complete history of all actions for accountability, legal compliance, and court order adherence.' },
   ];
@@ -122,7 +122,6 @@ export default function LandingScreen({ navigation }) {
             <View style={styles.storeButton}>
               <MaterialCommunityIcons name="google-play" size={24} color="#fff" />
               <View style={styles.storeButtonTextContainer}>
-                <Text style={styles.storeButtonSmallText}>Get it on</Text>
                 <Text style={styles.storeButtonText}>Google Play</Text>
               </View>
             </View>
@@ -136,7 +135,6 @@ export default function LandingScreen({ navigation }) {
             <View style={styles.storeButton}>
               <MaterialCommunityIcons name="apple" size={24} color="#fff" />
               <View style={styles.storeButtonTextContainer}>
-                <Text style={styles.storeButtonSmallText}>Download on the</Text>
                 <Text style={styles.storeButtonText}>App Store</Text>
               </View>
             </View>
@@ -273,7 +271,7 @@ export default function LandingScreen({ navigation }) {
       <View style={styles.ctaSection}>
         <Title style={styles.ctaSectionTitle}>Ready to Get Started?</Title>
         <Paragraph style={styles.ctaSectionText}>
-          Join families who are already using Family Helper to stay organized and connected.
+          Join families who are already using Family Helper to stay organised and connected.
         </Paragraph>
         <Button mode="contained" onPress={() => register()} style={styles.ctaButton}>
           Create Your Account
