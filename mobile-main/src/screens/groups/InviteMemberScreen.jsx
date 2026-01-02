@@ -17,6 +17,7 @@ import {
   RadioButton,
   Card,
   Avatar,
+  Checkbox,
 } from 'react-native-paper';
 import api from '../../services/api';
 import ColorPickerModal from '../../components/ColorPickerModal';
@@ -45,6 +46,12 @@ export default function InviteMemberScreen({ navigation, route }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [colorPickerVisible, setColorPickerVisible] = useState(false);
+  const [isPlaceholderAccount, setIsPlaceholderAccount] = useState(false);
+
+  // Generate placeholder email from display name
+  const placeholderEmail = displayName.trim()
+    ? `${displayName.trim().toLowerCase().replace(/\s+/g, '.')}@familyhelperapp.com`
+    : '';
 
   /**
    * Validate email format
@@ -80,32 +87,48 @@ export default function InviteMemberScreen({ navigation, route }) {
    * Handle invite submission
    */
   const handleInvite = async () => {
-    // Validate email
-    if (!email.trim()) {
-      setError('Email address is required');
-      return;
-    }
+    // For placeholder accounts, display name is required
+    if (isPlaceholderAccount) {
+      if (!displayName.trim()) {
+        setError('Display name is required for placeholder accounts');
+        return;
+      }
+    } else {
+      // For regular accounts, validate email
+      if (!email.trim()) {
+        setError('Email address is required');
+        return;
+      }
 
-    if (!isValidEmail(email.trim())) {
-      setError('Please enter a valid email address');
-      return;
+      if (!isValidEmail(email.trim())) {
+        setError('Please enter a valid email address');
+        return;
+      }
     }
 
     try {
       setLoading(true);
       setError(null);
 
+      // Use generated email for placeholder accounts
+      const finalEmail = isPlaceholderAccount ? placeholderEmail : email.trim().toLowerCase();
+
       const response = await api.post(`/groups/${groupId}/members/invite`, {
-        email: email.trim().toLowerCase(),
+        email: finalEmail,
         role: role,
         displayName: displayName.trim() || undefined,
         memberIcon: memberIcon.trim() || undefined,
         iconColor: iconColor,
+        isPlaceholderAccount: isPlaceholderAccount,
       });
 
       // Show appropriate message based on whether approval is required
-      const title = response.data.requiresApproval ? 'Approval Required' : 'Invitation Sent';
-      const message = response.data.message || `Invitation sent to ${email}. They will be added as a ${role}.`;
+      const title = response.data.requiresApproval
+        ? 'Approval Required'
+        : (isPlaceholderAccount ? 'Member Added' : 'Invitation Sent');
+      const message = response.data.message || (isPlaceholderAccount
+        ? `${displayName} has been added to the group as a ${role}.`
+        : `Invitation sent to ${email}. They will be added as a ${role}.`);
 
       CustomAlert.alert(
         title,
@@ -183,21 +206,53 @@ export default function InviteMemberScreen({ navigation, route }) {
           </HelperText>
         )}
 
-        <TextInput
-          label="Email Address *"
-          value={email}
-          onChangeText={(text) => {
-            setEmail(text);
+        {/* Placeholder Account Checkbox */}
+        <TouchableOpacity
+          style={styles.checkboxRow}
+          onPress={() => {
+            setIsPlaceholderAccount(!isPlaceholderAccount);
             setError(null);
           }}
+          disabled={loading}
+        >
+          <Checkbox
+            status={isPlaceholderAccount ? 'checked' : 'unchecked'}
+            onPress={() => {
+              setIsPlaceholderAccount(!isPlaceholderAccount);
+              setError(null);
+            }}
+            disabled={loading}
+          />
+          <View style={styles.checkboxContent}>
+            <Text style={styles.checkboxLabel}>Placeholder account (will never log in)</Text>
+            <Text style={styles.checkboxDescription}>
+              For members like schools, coaches, or organisations that don't need app access
+            </Text>
+          </View>
+        </TouchableOpacity>
+
+        <TextInput
+          label={isPlaceholderAccount ? "Email Address (auto-generated)" : "Email Address *"}
+          value={isPlaceholderAccount ? placeholderEmail : email}
+          onChangeText={(text) => {
+            if (!isPlaceholderAccount) {
+              setEmail(text);
+              setError(null);
+            }
+          }}
           mode="outlined"
-          style={styles.input}
-          placeholder="member@example.com"
+          style={[styles.input, isPlaceholderAccount && styles.disabledInput]}
+          placeholder={isPlaceholderAccount ? "Enter display name first" : "member@example.com"}
           keyboardType="email-address"
           autoCapitalize="none"
           autoCorrect={false}
-          disabled={loading}
+          disabled={loading || isPlaceholderAccount}
         />
+        {isPlaceholderAccount && (
+          <HelperText type="info" visible={true} style={styles.helperTextInfo}>
+            Email is auto-generated from display name. No invitation will be sent.
+          </HelperText>
+        )}
 
         <TouchableOpacity style={styles.avatarContainer} onPress={handleOpenColorPicker}>
           <Avatar.Text
@@ -210,16 +265,21 @@ export default function InviteMemberScreen({ navigation, route }) {
         </TouchableOpacity>
 
         <TextInput
-          label="Display Name (Placeholder)"
+          label={isPlaceholderAccount ? "Display Name *" : "Display Name (Optional)"}
           value={displayName}
-          onChangeText={setDisplayName}
+          onChangeText={(text) => {
+            setDisplayName(text);
+            setError(null);
+          }}
           mode="outlined"
           style={styles.input}
           placeholder="e.g., Grandma, School, Soccer Coach"
           disabled={loading}
         />
         <HelperText type="info" visible={true} style={styles.helperTextInfo}>
-          Optional: A name to display for this member until they join
+          {isPlaceholderAccount
+            ? "Required: The name for this placeholder member"
+            : "Optional: A name to display for this member until they join"}
         </HelperText>
 
         <TextInput
@@ -316,10 +376,10 @@ export default function InviteMemberScreen({ navigation, route }) {
           mode="contained"
           onPress={handleInvite}
           loading={loading}
-          disabled={loading || !email.trim()}
+          disabled={loading || (isPlaceholderAccount ? !displayName.trim() : !email.trim())}
           style={styles.inviteButton}
         >
-          Send Invitation
+          {isPlaceholderAccount ? 'Add Member' : 'Send Invitation'}
         </Button>
 
         <Button
@@ -367,6 +427,29 @@ const styles = StyleSheet.create({
   },
   input: {
     marginBottom: 20,
+  },
+  disabledInput: {
+    backgroundColor: '#f0f0f0',
+  },
+  checkboxRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 16,
+    paddingVertical: 8,
+  },
+  checkboxContent: {
+    flex: 1,
+    marginLeft: 8,
+  },
+  checkboxLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#333',
+  },
+  checkboxDescription: {
+    fontSize: 12,
+    color: '#666',
+    marginTop: 2,
   },
   errorText: {
     fontSize: 14,

@@ -981,7 +981,7 @@ async function inviteMember(req, res) {
   try {
     const userId = req.user?.userId;
     const { groupId } = req.params;
-    const { email, role, displayName: providedDisplayName, memberIcon, iconColor } = req.body;
+    const { email, role, displayName: providedDisplayName, memberIcon, iconColor, isPlaceholderAccount } = req.body;
 
     if (!userId) {
       return res.status(401).json({
@@ -1297,9 +1297,9 @@ async function inviteMember(req, res) {
         },
       });
 
-      // Send invitation email to ALL members with email addresses
-      // This includes both registered users AND placeholder members (who haven't signed up yet)
-      if (email) {
+      // Send invitation email only if NOT a placeholder account
+      // Placeholder accounts have auto-generated @familyhelperapp.com emails and will never log in
+      if (email && !isPlaceholderAccount) {
         try {
           const appUrl = process.env.APP_URL || 'https://familyhelperapp.com';
           const emailContent = emailTemplates.group_invitation({
@@ -1320,11 +1320,18 @@ async function inviteMember(req, res) {
           // Don't fail the request if email fails - just log the error
           console.error(`[Groups] Failed to send invitation email to ${email}:`, emailError.message);
         }
+      } else if (isPlaceholderAccount) {
+        console.log(`[Groups] Skipping invitation email for placeholder account: ${email}`);
       }
+
+      // Different message for placeholder vs regular invite
+      const successMessage = isPlaceholderAccount
+        ? `Successfully added ${displayName} as a placeholder member`
+        : `Successfully invited ${email} to the group`;
 
       res.status(201).json({
         success: true,
-        message: `Successfully invited ${email} to the group`,
+        message: successMessage,
         member: {
           groupMemberId: newMembership.groupMemberId,
           userId: newMembership.userId, // null if unregistered
@@ -1352,6 +1359,7 @@ async function inviteMember(req, res) {
             targetIconLetters: iconLetters,
             targetIconColor: iconColor || '#6200ee',
             targetIsRegistered: targetUser ? false : true,
+            isPlaceholderAccount: isPlaceholderAccount || false,
             allAdminIds: allAdminIds, // Snapshot of admins at approval creation time
           }),
         },
@@ -1389,9 +1397,14 @@ async function inviteMember(req, res) {
         approval.approvalId
       ).catch(err => console.error('[Groups] Failed to send approval notification:', err));
 
+      // Different message for placeholder vs regular member
+      const pendingMessage = isPlaceholderAccount
+        ? `Adding ${displayName} as a placeholder member requires >50% admin approval. If you are the only admin or have been auto-approved by other admins, this will complete immediately.`
+        : `Adding ${email} requires >50% admin approval. If you are the only admin or have been auto-approved by other admins, this will complete immediately.`;
+
       res.status(202).json({
         success: true,
-        message: `Adding ${email} requires >50% admin approval. If you are the only admin or have been auto-approved by other admins, this will complete immediately.`,
+        message: pendingMessage,
         requiresApproval: true,
         approvalId: approval.approvalId,
       });

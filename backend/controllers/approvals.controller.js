@@ -69,8 +69,8 @@ async function executeApprovedAction(approval) {
             },
           });
 
-          // Send invitation email to registered users only
-          if (targetUserId) {
+          // Send invitation email to registered users only (skip placeholder accounts)
+          if (targetUserId && !data.isPlaceholderAccount) {
             try {
               // Get group name and requester info for the email
               const group = await prisma.group.findUnique({
@@ -100,6 +100,8 @@ async function executeApprovedAction(approval) {
             } catch (emailError) {
               console.error(`[executeApprovedAction] Failed to send invitation email to ${data.targetEmail}:`, emailError.message);
             }
+          } else if (data.isPlaceholderAccount) {
+            console.log(`[executeApprovedAction] Skipping invitation email for placeholder account: ${data.targetEmail}`);
           }
         }
         break;
