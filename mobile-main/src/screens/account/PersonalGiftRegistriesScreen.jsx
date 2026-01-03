@@ -8,7 +8,8 @@
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { CustomAlert } from '../../components/CustomAlert';
-import { Card, Title, Text, Button, FAB, ActivityIndicator, Divider, IconButton } from 'react-native-paper';
+import { Card, Title, Text, Button, ActivityIndicator, Divider, IconButton } from 'react-native-paper';
+import SafeAreaFAB from '../../components/SafeAreaFAB';
 import api from '../../services/api';
 import CustomNavigationHeader from '../../components/CustomNavigationHeader';
 
@@ -252,7 +253,7 @@ export default function PersonalGiftRegistriesScreen({ navigation }) {
       </ScrollView>
 
       {/* Floating Action Button */}
-      <FAB
+      <SafeAreaFAB
         style={styles.fab}
         icon="plus"
         label="New Registry"

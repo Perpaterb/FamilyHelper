@@ -8,7 +8,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
-import { Card, Title, Text, FAB, Avatar, Chip, Badge, ActivityIndicator } from 'react-native-paper';
+import { Card, Title, Text, Avatar, Chip, Badge, ActivityIndicator } from 'react-native-paper';
+import SafeAreaFAB from '../../components/SafeAreaFAB';
 import { useFocusEffect } from '@react-navigation/native';
 import api from '../../services/api';
 import { getContrastTextColor } from '../../utils/colorUtils';
@@ -292,7 +293,7 @@ export default function FinanceListScreen({ navigation, route }) {
 
       {/* Only show FAB if user has permission to create */}
       {canCreate && (
-        <FAB
+        <SafeAreaFAB
           style={styles.fab}
           icon="plus"
           label="New Finance Request"

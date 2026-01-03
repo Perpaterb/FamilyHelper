@@ -13,6 +13,7 @@ import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { Card, Title, Text, Avatar, Button, Chip, Badge } from 'react-native-paper';
 import { useFocusEffect } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import api from '../../services/api';
 import { getContrastTextColor } from '../../utils/colorUtils';
 import CustomNavigationHeader from '../../components/CustomNavigationHeader';
@@ -31,6 +32,7 @@ import CustomNavigationHeader from '../../components/CustomNavigationHeader';
  */
 export default function GroupDashboardScreen({ navigation, route }) {
   const { groupId } = route.params;
+  const insets = useSafeAreaInsets();
   const [groupInfo, setGroupInfo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -414,7 +416,7 @@ export default function GroupDashboardScreen({ navigation, route }) {
           <Text>Group not found</Text>
         </View>
       ) : (
-        <ScrollView style={styles.scrollView}>
+        <ScrollView style={styles.scrollView} contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 16) + 20 }}>
       {/* Group Header */}
       <Card style={styles.headerCard}>
         <Card.Content style={styles.headerContent}>

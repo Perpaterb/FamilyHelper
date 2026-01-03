@@ -30,6 +30,7 @@ import Animated, {
   useAnimatedReaction,
   Easing,
 } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import API from '../../services/api';
 import CustomNavigationHeader from '../../components/CustomNavigationHeader';
 import DateTimeSelector, { formatDateByType } from '../../components/DateTimeSelector';
@@ -1079,6 +1080,7 @@ function InfiniteGrid({ externalXYFloat, onXYFloatChange, events, navigation, gr
  */
 export default function CalendarScreen({ navigation, route }) {
   const { groupId } = route.params;
+  const insets = useSafeAreaInsets();
 
   // View mode: 'month' or 'day'
   const [viewMode, setViewMode] = useState('month');
@@ -2084,7 +2086,7 @@ export default function CalendarScreen({ navigation, route }) {
       {/* Floating Action Button (both Month and Day views) */}
       {canCreate && (
         <TouchableOpacity
-          style={styles.fab}
+          style={[styles.fab, { bottom: 20 + Math.max(insets.bottom, 16) }]}
           onPress={() => setShowEventTypeModal(true)}
         >
           <Text style={styles.fabText}>+</Text>

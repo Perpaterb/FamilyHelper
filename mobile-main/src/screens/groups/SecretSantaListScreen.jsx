@@ -7,7 +7,8 @@
 
 import React, { useState, useCallback } from 'react';
 import { View, StyleSheet, FlatList, RefreshControl } from 'react-native';
-import { Text, Card, Title, Paragraph, FAB, ActivityIndicator, IconButton, Chip } from 'react-native-paper';
+import { Text, Card, Title, Paragraph, ActivityIndicator, IconButton, Chip } from 'react-native-paper';
+import SafeAreaFAB from '../../components/SafeAreaFAB';
 import { useFocusEffect } from '@react-navigation/native';
 import api from '../../services/api';
 import CustomNavigationHeader from '../../components/CustomNavigationHeader';
@@ -238,7 +239,7 @@ export default function SecretSantaListScreen({ navigation, route }) {
       />
 
       {canCreate && (
-        <FAB
+        <SafeAreaFAB
           icon="plus"
           style={styles.fab}
           label="New Secret Santa"

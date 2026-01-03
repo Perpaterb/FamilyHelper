@@ -8,7 +8,8 @@
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, FlatList, TouchableOpacity, Linking, Image } from 'react-native';
 import { CustomAlert } from '../../components/CustomAlert';
-import { Card, Title, Text, FAB, IconButton, Button, Chip, Divider, ActivityIndicator } from 'react-native-paper';
+import { Card, Title, Text, IconButton, Button, Chip, Divider, ActivityIndicator } from 'react-native-paper';
+import SafeAreaFAB from '../../components/SafeAreaFAB';
 import { useFocusEffect } from '@react-navigation/native';
 import api from '../../services/api';
 import ImageViewer from '../../components/shared/ImageViewer';
@@ -515,7 +516,7 @@ export default function GiftRegistryDetailScreen({ navigation, route }) {
       />
 
       {canEditRegistry() && (
-        <FAB
+        <SafeAreaFAB
           style={styles.fab}
           icon="plus"
           label="Add Item"

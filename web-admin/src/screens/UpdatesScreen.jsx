@@ -20,8 +20,8 @@ import {
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 export default function UpdatesScreen({ navigation }) {
-  const APP_VERSION = '1.0.87';
-  const LAST_UPDATED = 'January 2, 2025';
+  const APP_VERSION = '1.0.100';
+  const LAST_UPDATED = 'January 3, 2025';
 
   const comingSoon = [
     {
@@ -48,6 +48,11 @@ export default function UpdatesScreen({ navigation }) {
   ];
 
   const recentFixes = [
+    {
+      date: 'Jan 3, 2025',
+      title: 'Mobile App Bill Section',
+      description: 'Added current bill section to mobile app My Account screen. View cost breakdown, due date, and generate billing emails directly from the app.',
+    },
     {
       date: 'Jan 2, 2025',
       title: 'Auto-Approve Settings & Approvals Display',

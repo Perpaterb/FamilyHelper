@@ -2,9 +2,6 @@ package com.familyhelper.app
 
 import android.os.Build
 import android.os.Bundle
-import android.view.View
-import android.graphics.Color
-import androidx.core.view.WindowCompat
 
 import com.facebook.react.ReactActivity
 import com.facebook.react.ReactActivityDelegate
@@ -12,6 +9,9 @@ import com.facebook.react.defaults.DefaultNewArchitectureEntryPoint.fabricEnable
 import com.facebook.react.defaults.DefaultReactActivityDelegate
 
 import expo.modules.ReactActivityDelegateWrapper
+import android.graphics.Color
+import android.view.View
+import androidx.core.view.WindowCompat
 
 class MainActivity : ReactActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
@@ -20,7 +20,6 @@ class MainActivity : ReactActivity() {
     // This is required for expo-splash-screen.
     setTheme(R.style.AppTheme);
     super.onCreate(null)
-
     // Disable edge-to-edge mode - ensure content doesn't go behind navigation bar
     WindowCompat.setDecorFitsSystemWindows(window, true)
 

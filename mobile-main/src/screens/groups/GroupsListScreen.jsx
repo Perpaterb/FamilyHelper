@@ -8,7 +8,8 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { View, StyleSheet, FlatList, RefreshControl, ImageBackground, Animated } from 'react-native';
 import { CustomAlert } from '../../components/CustomAlert';
-import { Card, Title, Text, FAB, Avatar, Chip, Searchbar, Badge, IconButton, Portal, Modal, TextInput, Button, ActivityIndicator } from 'react-native-paper';
+import { Card, Title, Text, Avatar, Chip, Searchbar, Badge, IconButton, Portal, Modal, TextInput, Button, ActivityIndicator } from 'react-native-paper';
+import SafeAreaFAB from '../../components/SafeAreaFAB';
 import { useFocusEffect } from '@react-navigation/native';
 import api from '../../services/api';
 import { getContrastTextColor } from '../../utils/colorUtils';
@@ -596,7 +597,7 @@ export default function GroupsListScreen({ navigation }) {
         }
       />
 
-      <FAB
+      <SafeAreaFAB
         style={styles.fabSupport}
         label={"Support\nFeedback"}
         size="small"
@@ -604,7 +605,7 @@ export default function GroupsListScreen({ navigation }) {
         onPress={handleContactSupport}
       />
 
-      <FAB
+      <SafeAreaFAB
         style={styles.fab}
         icon="plus"
         label="Create Group"

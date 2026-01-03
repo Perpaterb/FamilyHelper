@@ -8,7 +8,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, FlatList, Modal, Animated, Dimensions, KeyboardAvoidingView, Platform,  } from 'react-native';
 import { CustomAlert } from '../../components/CustomAlert';
-import { IconButton, FAB, Searchbar, ActivityIndicator } from 'react-native-paper';
+import { IconButton, Searchbar, ActivityIndicator } from 'react-native-paper';
+import SafeAreaFAB from '../../components/SafeAreaFAB';
 import { useFocusEffect } from '@react-navigation/native';
 import api from '../../services/api';
 import CustomNavigationHeader from '../../components/CustomNavigationHeader';
@@ -468,7 +469,7 @@ export default function WikiScreen({ navigation, route }) {
 
       {/* FAB for creating new document */}
       {canCreate && (
-        <FAB
+        <SafeAreaFAB
           icon="plus"
           style={[styles.fab, { backgroundColor: groupInfo?.backgroundColor || '#6200ee' }]}
           color="#fff"
