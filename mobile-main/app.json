@@ -2,7 +2,7 @@
   "expo": {
     "name": "Family Helper",
     "slug": "family-helper",
-    "version": "1.0.912",
+    "version": "1.0.100",
     "scheme": "familyhelper",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -16,7 +16,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.familyhelper.app",
-      "buildNumber": "39"
+      "buildNumber": "40"
     },
     "android": {
       "adaptiveIcon": {
@@ -26,7 +26,7 @@
       "edgeToEdgeEnabled": false,
       "package": "com.familyhelper.app",
       "googleServicesFile": "./google-services.json",
-      "versionCode": 39
+      "versionCode": 40
     },
     "web": {
       "favicon": "./assets/favicon.png"
