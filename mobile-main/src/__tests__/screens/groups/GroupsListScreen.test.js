@@ -17,13 +17,22 @@
 import React from 'react';
 import { render, fireEvent, waitFor, act, screen } from '@testing-library/react-native';
 import { PaperProvider } from 'react-native-paper';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import GroupsListScreen from '../../../screens/groups/GroupsListScreen';
 import api from '../../../services/api';
 
-// Helper to render with PaperProvider
+// Mock initial metrics for SafeAreaProvider
+const mockSafeAreaInsets = {
+  frame: { x: 0, y: 0, width: 390, height: 844 },
+  insets: { top: 47, left: 0, right: 0, bottom: 34 },
+};
+
+// Helper to render with PaperProvider and SafeAreaProvider
 const renderWithProvider = (component) => {
   return render(
-    <PaperProvider>{component}</PaperProvider>
+    <SafeAreaProvider initialMetrics={mockSafeAreaInsets}>
+      <PaperProvider>{component}</PaperProvider>
+    </SafeAreaProvider>
   );
 };
 
@@ -201,7 +210,7 @@ describe('GroupsListScreen', () => {
 
   describe('Pin/Unpin Groups (US-GROUP-004)', () => {
     it('should toggle pin status when pin button is pressed', async () => {
-      const { getByText, getAllByTestId } = render(
+      const { getByText, getAllByTestId } = renderWithProvider(
         <GroupsListScreen navigation={mockNavigation} />
       );
 
@@ -222,7 +231,7 @@ describe('GroupsListScreen', () => {
     });
 
     it('should call unpin API for already pinned groups', async () => {
-      const { getByText, getAllByTestId } = render(
+      const { getByText, getAllByTestId } = renderWithProvider(
         <GroupsListScreen navigation={mockNavigation} />
       );
 
@@ -244,7 +253,7 @@ describe('GroupsListScreen', () => {
     });
 
     it('should reload groups after pin/unpin', async () => {
-      const { getByText, getAllByTestId } = render(
+      const { getByText, getAllByTestId } = renderWithProvider(
         <GroupsListScreen navigation={mockNavigation} />
       );
 
@@ -267,7 +276,7 @@ describe('GroupsListScreen', () => {
 
   describe('Mute/Unmute Groups (US-GROUP-010)', () => {
     it('should toggle mute status when mute button is pressed', async () => {
-      const { getByText, getAllByTestId } = render(
+      const { getByText, getAllByTestId } = renderWithProvider(
         <GroupsListScreen navigation={mockNavigation} />
       );
 
@@ -288,7 +297,7 @@ describe('GroupsListScreen', () => {
     });
 
     it('should call unmute API for already muted groups', async () => {
-      const { getByText, getAllByTestId } = render(
+      const { getByText, getAllByTestId } = renderWithProvider(
         <GroupsListScreen navigation={mockNavigation} />
       );
 
@@ -311,7 +320,7 @@ describe('GroupsListScreen', () => {
 
   describe('Support/Feedback Button', () => {
     it('should display support/feedback FAB button', async () => {
-      const { getByText } = render(
+      const { getByText } = renderWithProvider(
         <GroupsListScreen navigation={mockNavigation} />
       );
 
@@ -321,7 +330,7 @@ describe('GroupsListScreen', () => {
     });
 
     it('should open feedback modal when support button is pressed', async () => {
-      const { getByText } = render(
+      const { getByText } = renderWithProvider(
         <GroupsListScreen navigation={mockNavigation} />
       );
 
@@ -338,7 +347,7 @@ describe('GroupsListScreen', () => {
     });
 
     it('should send feedback when send button is pressed', async () => {
-      const { getByText, getByPlaceholderText } = render(
+      const { getByText, getByPlaceholderText } = renderWithProvider(
         <GroupsListScreen navigation={mockNavigation} />
       );
 
@@ -365,7 +374,7 @@ describe('GroupsListScreen', () => {
     });
 
     it('should close modal when cancel is pressed', async () => {
-      const { getByText, queryByText } = render(
+      const { getByText, queryByText } = renderWithProvider(
         <GroupsListScreen navigation={mockNavigation} />
       );
 
@@ -389,7 +398,7 @@ describe('GroupsListScreen', () => {
 
   describe('Search Functionality', () => {
     it('should toggle search bar when search icon is pressed', async () => {
-      const { getByTestId, queryByPlaceholderText, getByPlaceholderText } = render(
+      const { getByTestId, queryByPlaceholderText, getByPlaceholderText } = renderWithProvider(
         <GroupsListScreen navigation={mockNavigation} />
       );
 
@@ -406,7 +415,7 @@ describe('GroupsListScreen', () => {
     });
 
     it('should filter groups based on search query', async () => {
-      const { getByTestId, getByPlaceholderText, getByText, queryByText } = render(
+      const { getByTestId, getByPlaceholderText, getByText, queryByText } = renderWithProvider(
         <GroupsListScreen navigation={mockNavigation} />
       );
 
@@ -427,7 +436,7 @@ describe('GroupsListScreen', () => {
     });
 
     it('should show empty state when search has no results', async () => {
-      const { getByTestId, getByPlaceholderText, getByText } = render(
+      const { getByTestId, getByPlaceholderText, getByText } = renderWithProvider(
         <GroupsListScreen navigation={mockNavigation} />
       );
 
@@ -447,7 +456,7 @@ describe('GroupsListScreen', () => {
     });
 
     it('should clear search when search bar is hidden', async () => {
-      const { getByTestId, getByPlaceholderText, getByText, queryByText } = render(
+      const { getByTestId, getByPlaceholderText, getByText, queryByText } = renderWithProvider(
         <GroupsListScreen navigation={mockNavigation} />
       );
 
@@ -477,7 +486,7 @@ describe('GroupsListScreen', () => {
 
   describe('Invitations Badge', () => {
     it('should display invitation count in header', async () => {
-      const { getAllByText } = render(
+      const { getAllByText } = renderWithProvider(
         <GroupsListScreen navigation={mockNavigation} />
       );
 
@@ -490,7 +499,7 @@ describe('GroupsListScreen', () => {
     });
 
     it('should navigate to invites screen when email icon is pressed', async () => {
-      const { getByTestId, getByText } = render(
+      const { getByTestId, getByText } = renderWithProvider(
         <GroupsListScreen navigation={mockNavigation} />
       );
 
@@ -506,7 +515,7 @@ describe('GroupsListScreen', () => {
 
   describe('Create Group', () => {
     it('should display create group FAB', async () => {
-      const { getByText } = render(
+      const { getByText } = renderWithProvider(
         <GroupsListScreen navigation={mockNavigation} />
       );
 
@@ -516,7 +525,7 @@ describe('GroupsListScreen', () => {
     });
 
     it('should navigate to create group screen when FAB is pressed', async () => {
-      const { getByText } = render(
+      const { getByText } = renderWithProvider(
         <GroupsListScreen navigation={mockNavigation} />
       );
 
@@ -532,7 +541,7 @@ describe('GroupsListScreen', () => {
 
   describe('My Account Navigation', () => {
     it('should navigate to my account when account icon is pressed', async () => {
-      const { getByTestId, getByText } = render(
+      const { getByTestId, getByText } = renderWithProvider(
         <GroupsListScreen navigation={mockNavigation} />
       );
 
@@ -560,7 +569,7 @@ describe('GroupsListScreen', () => {
         return Promise.reject(new Error('Unknown URL'));
       });
 
-      const { getByText } = render(
+      const { getByText } = renderWithProvider(
         <GroupsListScreen navigation={mockNavigation} />
       );
 
@@ -588,7 +597,7 @@ describe('GroupsListScreen', () => {
         return Promise.reject(new Error('Unknown URL'));
       });
 
-      const { getByText } = render(
+      const { getByText } = renderWithProvider(
         <GroupsListScreen navigation={mockNavigation} />
       );
 
@@ -606,7 +615,7 @@ describe('GroupsListScreen', () => {
 
   describe('Pull to Refresh', () => {
     it('should reload groups on pull to refresh', async () => {
-      const { getByText, UNSAFE_getByType } = render(
+      const { getByText, UNSAFE_getByType } = renderWithProvider(
         <GroupsListScreen navigation={mockNavigation} />
       );
 
