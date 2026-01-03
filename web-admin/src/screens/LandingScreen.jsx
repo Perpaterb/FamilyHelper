@@ -114,7 +114,7 @@ export default function LandingScreen({ navigation }) {
         <Text style={styles.privacyNote}>Completely ad-free and we will never sell or give any data away</Text>
         <div className="store-buttons-container">
           <a
-            href="https://play.google.com/store"
+            href="https://play.google.com/store/apps/details?id=com.familyhelper.app"
             target="_blank"
             rel="noopener noreferrer"
             style={{ textDecoration: 'none' }}
@@ -122,6 +122,7 @@ export default function LandingScreen({ navigation }) {
             <View style={styles.storeButton}>
               <MaterialCommunityIcons name="google-play" size={24} color="#fff" style={styles.storeButtonIcon} />
               <View style={styles.storeButtonTextContainerCentered}>
+                <Text style={styles.storeButtonSmallText}>Coming Soon</Text>
                 <Text style={styles.storeButtonText}>Google Play</Text>
               </View>
             </View>
@@ -135,6 +136,7 @@ export default function LandingScreen({ navigation }) {
             <View style={styles.storeButton}>
               <MaterialCommunityIcons name="apple" size={24} color="#fff" style={styles.storeButtonIcon} />
               <View style={styles.storeButtonTextContainerCentered}>
+                <Text style={styles.storeButtonSmallText}>Coming Soon</Text>
                 <Text style={styles.storeButtonText}>App Store</Text>
               </View>
             </View>
