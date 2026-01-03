@@ -7,7 +7,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, Linking } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import {
   Text,
   Card,
@@ -15,6 +15,8 @@ import {
   ActivityIndicator,
   TextInput,
   Divider,
+  IconButton,
+  Snackbar,
 } from 'react-native-paper';
 import config from '../config/env';
 
@@ -41,6 +43,18 @@ export default function ItemRegistryPublicScreen({ route }) {
   const [passcode, setPasscode] = useState('');
   const [verifying, setVerifying] = useState(false);
   const [verifyError, setVerifyError] = useState(null);
+
+  // Copy link snackbar
+  const [snackbarVisible, setSnackbarVisible] = useState(false);
+
+  const handleCopyLink = async (link) => {
+    try {
+      await navigator.clipboard.writeText(link);
+      setSnackbarVisible(true);
+    } catch (err) {
+      console.error('Failed to copy:', err);
+    }
+  };
 
   // Fetch registry info
   useEffect(() => {
@@ -243,12 +257,16 @@ export default function ItemRegistryPublicScreen({ route }) {
                       )}
 
                       {item.link && (
-                        <Text
-                          style={styles.itemLink}
-                          onPress={() => Linking.openURL(item.link)}
-                        >
-                          View Link →
-                        </Text>
+                        <View style={styles.linkContainer}>
+                          <Text style={styles.linkLabel}>Link:</Text>
+                          <Text style={styles.linkText} selectable>{item.link}</Text>
+                          <IconButton
+                            icon="content-copy"
+                            size={18}
+                            onPress={() => handleCopyLink(item.link)}
+                            style={styles.copyButton}
+                          />
+                        </View>
                       )}
                     </View>
                     {index < registry.items.length - 1 && <Divider style={styles.divider} />}
@@ -264,6 +282,16 @@ export default function ItemRegistryPublicScreen({ route }) {
         </Text>
       </View>
       <View style={{ height: 40 }} />
+
+      {/* Copy Link Snackbar */}
+      <Snackbar
+        visible={snackbarVisible}
+        onDismiss={() => setSnackbarVisible(false)}
+        duration={2000}
+        style={styles.snackbar}
+      >
+        Link copied to clipboard
+      </Snackbar>
     </div>
   );
 }
@@ -350,11 +378,32 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#333',
   },
-  itemLink: {
-    fontSize: 14,
-    color: '#6200ee',
+  linkContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f5f5f5',
+    borderRadius: 8,
+    padding: 8,
+    paddingLeft: 12,
     marginTop: 8,
-    fontWeight: '500',
+    flexWrap: 'wrap',
+  },
+  linkLabel: {
+    fontSize: 13,
+    color: '#666',
+    marginRight: 8,
+  },
+  linkText: {
+    fontSize: 13,
+    color: '#333',
+    flex: 1,
+    wordBreak: 'break-all',
+  },
+  copyButton: {
+    margin: 0,
+  },
+  snackbar: {
+    backgroundColor: '#333',
   },
   divider: {
     marginVertical: 8,
