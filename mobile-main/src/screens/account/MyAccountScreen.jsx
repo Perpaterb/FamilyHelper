@@ -11,7 +11,8 @@
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, ScrollView, Linking, TouchableOpacity, Image, Platform } from 'react-native';
 import { CustomAlert } from '../../components/CustomAlert';
-import { Card, Title, Text, TextInput, Button, Avatar, Divider, ActivityIndicator } from 'react-native-paper';
+import { Card, Title, Text, TextInput, Button, Avatar, Divider, ActivityIndicator, Surface } from 'react-native-paper';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as SecureStore from 'expo-secure-store';
 import api from '../../services/api';
 import { STORAGE_KEYS, API_BASE_URL } from '../../config/config';
@@ -43,6 +44,8 @@ export default function MyAccountScreen({ navigation }) {
   const [error, setError] = useState(null);
   const [colorPickerVisible, setColorPickerVisible] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [invoice, setInvoice] = useState(null);
+  const [regeneratingBill, setRegeneratingBill] = useState(false);
 
   useEffect(() => {
     loadAccountInfo();
@@ -107,6 +110,15 @@ export default function MyAccountScreen({ navigation }) {
           status: 'trial',
           daysRemaining: 20,
         });
+      }
+
+      // Get invoice/bill data
+      try {
+        const invoiceResponse = await api.get('/subscriptions/invoice');
+        setInvoice(invoiceResponse.data.invoice);
+      } catch (err) {
+        console.error('Failed to load invoice:', err);
+        // Don't show error - invoice may not be available yet
       }
 
     } catch (err) {
@@ -345,6 +357,60 @@ export default function MyAccountScreen({ navigation }) {
     return 'No Active Subscription';
   };
 
+  /**
+   * Check if user is on free trial
+   */
+  const isOnFreeTrial = () => {
+    return subscriptionStatus?.daysRemaining > 0 && !subscriptionStatus?.isActive;
+  };
+
+  /**
+   * Check if subscription is expired
+   */
+  const isExpired = () => {
+    return subscriptionStatus?.subscriptionManuallyExpired || subscriptionStatus?.status === 'manually_expired';
+  };
+
+  /**
+   * Check if user has permanent subscription (internal/special)
+   */
+  const isPermanentSubscription = () => {
+    return subscriptionStatus?.isPermanent === true;
+  };
+
+  /**
+   * Check if regenerate bill button should be enabled
+   * Only enable within 7 days of due date, or for trial users
+   */
+  const canRegenerateBill = () => {
+    if (isOnFreeTrial()) {
+      return true; // Trial users can always generate
+    }
+    return invoice && invoice.daysUntilDue <= 7;
+  };
+
+  /**
+   * Handle regenerate bill button click
+   */
+  const handleRegenerateBill = async () => {
+    try {
+      setRegeneratingBill(true);
+      setError(null);
+
+      const response = await api.post('/subscriptions/regenerate-bill');
+
+      // Update invoice with new data
+      setInvoice(response.data.invoice);
+
+      CustomAlert.alert('Success', 'Billing email sent! Check your inbox for the payment link.');
+    } catch (err) {
+      console.error('Regenerate bill failed:', err);
+      CustomAlert.alert('Error', err.response?.data?.message || 'Failed to regenerate bill. Please try again.');
+    } finally {
+      setRegeneratingBill(false);
+    }
+  };
+
   if (loading) {
     return (
       <View style={styles.container}>
@@ -491,6 +557,94 @@ export default function MyAccountScreen({ navigation }) {
           </Button>
         </Card.Content>
       </Card>
+
+      {/* Current Bill Card - Show for subscribed, trial, or expired users */}
+      {invoice && (subscriptionStatus?.isSubscribed || isOnFreeTrial() || isExpired()) && (
+        <Card style={styles.billCard}>
+          <Card.Content>
+            <View style={styles.billHeader}>
+              <MaterialCommunityIcons name="receipt" size={28} color="#6200ee" />
+              <Title style={styles.billTitle}>Your Current Bill</Title>
+            </View>
+            <Divider style={styles.divider} />
+
+            {/* Cost Breakdown Table */}
+            <View style={styles.billTable}>
+              <View style={styles.billRow}>
+                <Text style={styles.billLabel}>Admin Subscription</Text>
+                <Text style={styles.billValue}>${invoice.baseAmount} USD</Text>
+              </View>
+              <View style={styles.billRow}>
+                <Text style={styles.billLabel}>Storage Used</Text>
+                <Text style={styles.billValue}>{invoice.storageUsedGb} GB</Text>
+              </View>
+              <View style={styles.billRow}>
+                <Text style={styles.billLabel}>Additional Storage ({invoice.storagePacksNeeded} × 10GB)</Text>
+                <Text style={styles.billValue}>${invoice.storageCharges} USD</Text>
+              </View>
+              <View style={[styles.billRow, styles.billTotalRow]}>
+                <Text style={styles.billTotalLabel}>TOTAL DUE</Text>
+                <Text style={styles.billTotalValue}>${invoice.totalAmount} USD</Text>
+              </View>
+            </View>
+
+            {/* Due Date */}
+            <View style={styles.dueDateContainer}>
+              <MaterialCommunityIcons
+                name="calendar-clock"
+                size={20}
+                color={invoice.daysUntilDue <= 3 ? '#d32f2f' : invoice.daysUntilDue <= 5 ? '#f57c00' : '#666'}
+              />
+              <Text style={[
+                styles.dueDateText,
+                invoice.daysUntilDue <= 3 && styles.dueDateUrgent,
+                invoice.daysUntilDue <= 5 && invoice.daysUntilDue > 3 && styles.dueDateWarning,
+              ]}>
+                Due: {invoice.dueDate} ({invoice.daysUntilDue} day{invoice.daysUntilDue !== 1 ? 's' : ''})
+              </Text>
+            </View>
+
+            {/* Trial user note about billing date */}
+            {isOnFreeTrial() && (
+              <Surface style={styles.trialBillingNote}>
+                <MaterialCommunityIcons name="information" size={18} color="#1565c0" />
+                <Text style={styles.trialBillingNoteText}>
+                  Your first billing date is at the end of your 20-day trial. If you subscribe during your trial the first subscription period will be one month + the days left on your trial.
+                </Text>
+              </Surface>
+            )}
+
+            {/* Generate/Regenerate Bill Email Button - disabled for permanent subscriptions */}
+            {!isPermanentSubscription() && (
+              <View style={styles.billActions}>
+                <Button
+                  mode="outlined"
+                  onPress={handleRegenerateBill}
+                  loading={regeneratingBill}
+                  disabled={regeneratingBill || !canRegenerateBill()}
+                  style={[styles.generateBillButton, !canRegenerateBill() && styles.buttonDisabled]}
+                  textColor="#6200ee"
+                  icon="email-outline"
+                >
+                  {invoice.lastBillingEmailSent ? 'Regenerate Bill Email' : 'Generate Bill Email'}
+                </Button>
+              </View>
+            )}
+
+            {!isPermanentSubscription() && !canRegenerateBill() && !isOnFreeTrial() && (
+              <Text style={styles.billNote}>
+                You can generate a billing email within 7 days of your due date.
+              </Text>
+            )}
+
+            {!isPermanentSubscription() && (
+              <Text style={styles.paymentNote}>
+                To pay your bill, click the payment link in the billing email we send you.
+              </Text>
+            )}
+          </Card.Content>
+        </Card>
+      )}
 
       {/* Personal Registries Section */}
       <Card style={styles.card}>
@@ -667,5 +821,115 @@ const styles = StyleSheet.create({
     color: '#333',
     marginVertical: 4,
     lineHeight: 20,
+  },
+  // Bill Card Styles
+  billCard: {
+    marginBottom: 16,
+    elevation: 2,
+    borderLeftWidth: 4,
+    borderLeftColor: '#6200ee',
+  },
+  billHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  billTitle: {
+    marginLeft: 12,
+    fontSize: 20,
+  },
+  billTable: {
+    marginVertical: 12,
+  },
+  billRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+  },
+  billLabel: {
+    fontSize: 14,
+    color: '#333',
+    flex: 1,
+  },
+  billValue: {
+    fontSize: 14,
+    color: '#333',
+    fontWeight: '500',
+  },
+  billTotalRow: {
+    borderBottomWidth: 0,
+    borderTopWidth: 2,
+    borderTopColor: '#6200ee',
+    marginTop: 8,
+    paddingTop: 12,
+  },
+  billTotalLabel: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  billTotalValue: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#6200ee',
+  },
+  dueDateContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 12,
+    padding: 12,
+    backgroundColor: '#f5f5f5',
+    borderRadius: 8,
+  },
+  dueDateText: {
+    marginLeft: 8,
+    fontSize: 14,
+    color: '#666',
+  },
+  dueDateUrgent: {
+    color: '#d32f2f',
+    fontWeight: 'bold',
+  },
+  dueDateWarning: {
+    color: '#f57c00',
+    fontWeight: '500',
+  },
+  trialBillingNote: {
+    flexDirection: 'row',
+    padding: 12,
+    marginTop: 12,
+    backgroundColor: '#e3f2fd',
+    borderRadius: 8,
+    elevation: 0,
+  },
+  trialBillingNoteText: {
+    flex: 1,
+    marginLeft: 8,
+    fontSize: 13,
+    color: '#1565c0',
+    lineHeight: 18,
+  },
+  billActions: {
+    marginTop: 16,
+  },
+  generateBillButton: {
+    borderColor: '#6200ee',
+  },
+  buttonDisabled: {
+    opacity: 0.5,
+  },
+  billNote: {
+    marginTop: 8,
+    fontSize: 12,
+    color: '#666',
+    fontStyle: 'italic',
+  },
+  paymentNote: {
+    marginTop: 12,
+    fontSize: 13,
+    color: '#666',
+    lineHeight: 18,
   },
 });
