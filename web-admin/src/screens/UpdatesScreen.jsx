@@ -20,8 +20,8 @@ import {
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 export default function UpdatesScreen({ navigation }) {
-  const APP_VERSION = '1.0.100';
-  const LAST_UPDATED = 'January 3, 2025';
+  const APP_VERSION = '1.0.101';
+  const LAST_UPDATED = 'January 4, 2025';
 
   const comingSoon = [
     {
@@ -36,6 +36,12 @@ export default function UpdatesScreen({ navigation }) {
       description: 'Create shared photo albums within your groups. Organize memories by events, dates, or custom albums.',
       status: 'Planned',
     },
+    {
+      icon: 'cloud-upload',
+      title: 'Independent App Updates',
+      description: 'Update the web app, mobile apps, and this updates page without requiring backend downtime. Enables faster feature releases.',
+      status: 'Planned',
+    },
   ];
 
   const knownIssues = [
@@ -48,6 +54,11 @@ export default function UpdatesScreen({ navigation }) {
   ];
 
   const recentFixes = [
+    {
+      date: 'Jan 4, 2025',
+      title: 'App Icon Update',
+      description: 'Updated app icons to fill more of the icon space. Icons now display correctly on both iOS and Android home screens.',
+    },
     {
       date: 'Jan 3, 2025',
       title: 'Mobile App Bill Section',

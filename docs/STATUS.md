@@ -97,6 +97,7 @@ Secure messaging, shared calendars, expense tracking - all in one private, ad-fr
 
 | Version | Build | Date | Notes |
 |---------|-------|------|-------|
+| 1.0.101 | 41 | Jan 4, 2025 | Icon update (larger graphics) |
 | 1.0.100 | 40 | Jan 4, 2025 | App Store submissions |
 | 1.0.912 | 39 | Jan 3, 2025 | Bill section, SafeAreaFAB |
 | 1.0.911 | 38 | Jan 3, 2025 | Navigation bar fixes |
@@ -115,8 +116,15 @@ Secure messaging, shared calendars, expense tracking - all in one private, ad-fr
 
 1. **Get 12 Android testers** - Required for Google Play public release
 2. **iOS App Store approval** - Awaiting review
-3. **Update app icons** - Replace with larger graphic versions
-4. **Public release** - After testing requirements met
+3. **Public release** - After testing requirements met
+
+## Future Features
+
+| Feature | Description | Priority |
+|---------|-------------|----------|
+| Independent Deployments | Update web app, mobile apps, and /updates page without backend downtime | Medium |
+| Calendar Import/Export | Import from Google/Apple/Outlook, export to other apps | Medium |
+| Group Photo Albums | Shared photo albums within groups | Low |
 
 ---
 
